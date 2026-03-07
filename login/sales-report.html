@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Report - KGL</title>
+  <style>
+    :root {
+      --bg: #0b1221;
+      --panel: #0f172a;
+      --accent: #10b981;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: rgba(255,255,255,0.06);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #38bdf8);
+      color: #0b1221;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .filters {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    select, input {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+    }
+    .table-container {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: auto;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: rgba(255,255,255,0.02); font-weight: 600; }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge.cash { background: rgba(16,185,129,0.16); color: var(--accent); }
+    .badge.credit { background: rgba(251,191,36,0.18); color: #fbbf24; }
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: var(--accent);
+      color: #0b1221;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    @media print {
+      body { background: white; color: black; }
+      .no-print { display: none !important; }
+      .table-container { border: 1px solid #ddd; }
+      th { background: #f5f5f5 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header no-print">
+      <div>
+        <h1 style="margin:0 0 4px 0">Sales Report</h1>
+        <p style="margin:0;color:var(--muted)">View all purchases and transactions</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" onclick="window.print()">🖨️ Print Report</button>
+        <a href="/dashboard" class="btn btn-secondary">← Dashboard</a>
+      </div>
+    </div>
+
+    <div class="filters no-print">
+      <label style="color:var(--muted)">Filter:</label>
+      <select id="typeFilter">
+        <option value="">All Types</option>
+        <option value="cash">Cash Sales</option>
+        <option value="credit">Credit Sales</option>
+      </select>
+      <select id="branchFilter">
+        <option value="">All Branches</option>
+        <option value="branch1">Matugga</option>
+        <option value="branch2">Maganjo</option>
+      </select>
+      <input type="date" id="startDate">
+      <input type="date" id="endDate">
+      <button class="btn" onclick="loadSales()">Apply Filters</button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Buyer</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Branch</th>
+            <th>Agent</th>
+            <th class="no-print">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="salesList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (!token) window.location.href = '/login';
+
+    let allSales = [];
+
+    async function loadSales() {
+      try {
+        const type = document.getElementById('typeFilter').value;
+        const branch = document.getElementById('branchFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        const res = await fetch(`${API_BASE}/api/sales/customers?branch=${branch}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        allSales = (data.customers || []).map(s => ({
+          ...s,
+          salesAgentName: s.salesAgentName || 'System'
+        }));
+
+        // Apply filters
+        let filtered = allSales;
+        if (type) filtered = filtered.filter(s => s.saleType === type);
+        if (startDate) filtered = filtered.filter(s => new Date(s.createdAt) >= new Date(startDate));
+        if (endDate) filtered = filtered.filter(s => new Date(s.createdAt) <= new Date(endDate));
+
+        renderSales(filtered);
+      } catch (err) {
+        alert('Failed to load sales');
+      }
+    }
+
+    function renderSales(sales) {
+      const tbody = document.getElementById('salesList');
+      if (!sales.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted)">No sales found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = sales.map(sale => {
+        const date = new Date(sale.createdAt).toLocaleDateString();
+        const typeClass = sale.saleType === 'cash' ? 'cash' : 'credit';
+        
+        return `
+          <tr>
+            <td>${date}</td>
+            <td>${sale.buyerName}</td>
+            <td>${sale.produceName}</td>
+            <td>${sale.tonnage}</td>
+            <td>${sale.amount.toFixed(2)}</td>
+            <td><span class="badge ${typeClass}">${sale.saleType.toUpperCase()}</span></td>
+            <td>${sale.branch}</td>
+            <td>${sale.salesAgentName || 'N/A'}</td>
+            <td class="no-print">
+              <button class="btn-small" onclick='printReceipt(${JSON.stringify(sale).replace(/'/g, "\\'")})'> Receipt</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.printReceipt = (sale) => {
+      const receiptWindow = window.open('', '_blank', 'width=400,height=600');
+      receiptWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Receipt - ${sale.buyerName}</title>
+          <style>
+            body { font-family: monospace; padding: 20px; max-width: 400px; margin: 0 auto; }
+            h2 { text-align: center; margin: 0; }
+            .line { border-top: 2px dashed #000; margin: 10px 0; }
+            .row { display: flex; justify-content: space-between; margin: 5px 0; }
+            .total { font-weight: bold; font-size: 1.2em; }
+            @media print {
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <h2>KGL RECEIPT</h2>
+          <div class="line"></div>
+          <div class="row"><span>Date:</span><span>${new Date(sale.createdAt).toLocaleString()}</span></div>
+          <div class="row"><span>Branch:</span><span>${sale.branch}</span></div>
+          <div class="line"></div>
+          <div class="row"><span>Buyer:</span><span>${sale.buyerName}</span></div>
+          ${sale.contact ? `<div class="row"><span>Contact:</span><span>${sale.contact}</span></div>` : ''}
+          ${sale.nin ? `<div class="row"><span>NIN:</span><span>${sale.nin}</span></div>` : ''}
+          <div class="line"></div>
+          <div class="row"><span>Product:</span><span>${sale.produceName}</span></div>
+          <div class="row"><span>Quantity:</span><span>${sale.tonnage} units</span></div>
+          <div class="row"><span>Type:</span><span>${sale.saleType.toUpperCase()}</span></div>
+          <div class="line"></div>
+          <div class="row total"><span>TOTAL:</span><span>UGX ${sale.amount.toFixed(2)}</span></div>
+          ${sale.status ? `<div class="row"><span>Status:</span><span>${sale.status.toUpperCase()}</span></div>` : ''}
+          ${sale.dueDate ? `<div class="row"><span>Due Date:</span><span>${new Date(sale.dueDate).toLocaleDateString()}</span></div>` : ''}
+          <div class="line"></div>
+          <p style="text-align:center;font-size:0.9em">Thank you for your business!</p>
+          <button onclick="window.print()" style="width:100%;padding:10px;margin-top:10px">Print Receipt</button>
+        </body>
+        </html>
+      `);
+      receiptWindow.document.close();
+    };
+
+    loadSales();
+  </script>
+</body>
+</html>

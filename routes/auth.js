@@ -33,8 +33,10 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { verifyToken } = require('../middleware/auth');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+// Use the same default secret as middleware/auth.js to avoid token verification mismatches
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 // Attempt to load multer for handling file uploads. If it's not installed,
 // fall back to not saving files and continue handling JSON registrations.
@@ -292,5 +294,71 @@ router.get('/profile/:userId', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+/**
+ * PUT /api/auth/profile/:userId
+ * Allows a user to update their own profile.
+ * Directors can update any profile.
+ */
+const updateProfileHandler = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Only the owner or a director can edit
+    if (req.user.userId !== userId && req.user.role !== 'director') {
+      return res.status(403).json({ error: 'You can only update your own profile' });
+    }
+
+    const { name, contact, branch, password } = req.body;
+    const updates = {};
+
+    if (name) updates.name = name;
+    if (contact) {
+      if (!/^[0-9]{10,15}$/.test(contact)) {
+        return res.status(400).json({ error: 'Contact must be a valid phone number (10-15 digits)' });
+      }
+      updates.contact = contact;
+    }
+    if (branch) {
+      if (!['branch1', 'branch2'].includes(branch)) {
+        return res.status(400).json({ error: 'Branch must be branch1 or branch2' });
+      }
+      updates.branch = branch;
+    }
+    if (password) {
+      updates.password = await bcrypt.hash(password, 10);
+    }
+
+    if (req.file) {
+      updates.photo = '/uploads/' + req.file.filename;
+    }
+
+    const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Profile updated',
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      branch: user.branch,
+      contact: user.contact,
+      photo: user.photo
+    });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Use multer when available, otherwise fall back to JSON-only updates
+if (uploadMiddleware) {
+  router.put('/profile/:userId', verifyToken, uploadMiddleware, updateProfileHandler);
+} else {
+  router.put('/profile/:userId', verifyToken, updateProfileHandler);
+}
 
 module.exports = router;

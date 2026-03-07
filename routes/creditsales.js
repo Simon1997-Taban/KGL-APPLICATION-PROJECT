@@ -38,7 +38,25 @@ const { validateCreditSale } = require('../middleware/validators');
 // Record a credit sale (Manager and Agent only)
 router.post('/', verifyToken, populateUser, onlyManagersAndAgents, validateCreditSale, async (req, res) => {
   try {
-    const { buyerName, nin, location, contact, amountDue, produceName, tonnage, dueDate, branch } = req.body;
+    const {
+      buyerName,
+      email,
+      nin,
+      location,
+      nationality,
+      contact,
+      produceName,
+      tonnage,
+      dispatchDate,
+      returnDate,
+      dueDate,
+      branch
+    } = req.body;
+
+    // Enforce branch scope for managers/agents
+    if (req.user.role === 'agent' && branch !== req.userData.branch) {
+      return res.status(403).json({ error: 'You can only record credit sales for your assigned branch' });
+    }
 
     // Find the produce item
     const produce = await Produce.findOne({ name: produceName, branch });
@@ -54,20 +72,32 @@ router.post('/', verifyToken, populateUser, onlyManagersAndAgents, validateCredi
       });
     }
 
+    // Ensure sale price set by manager is used
+    if (!produce.salePrice) {
+      return res.status(400).json({ error: 'Sale price not set for this produce. Ask manager to set a price first.' });
+    }
+
+    const finalAmountDue = (produce.salePrice || 0) * tonnage;
+
+    const dispatch = dispatchDate ? new Date(dispatchDate) : new Date();
+    const expectedReturn = new Date(returnDate || dueDate);
+
     // Create credit sale record
     const creditSale = new CreditSale({
       buyerName,
+      email,
       nin,
       location,
+      nationality,
       contact,
-      amountDue,
+      amountDue: finalAmountDue,
       produce: produce._id,
       produceName,
       tonnage,
       salesAgent: req.user.userId,
       salesAgentName: req.userData.name,
-      dueDate,
-      dispatchDate: new Date(),
+      dueDate: expectedReturn,
+      dispatchDate: dispatch,
       branch,
       status: 'pending'
     });

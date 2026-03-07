@@ -1,293 +1,319 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .form-box {
-      width: 400px;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    }
-    .form-box h2 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 30px;
-      font-size: 1.8rem;
-    }
-    input, select {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      box-sizing: border-box;
-      font-size: 1rem;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 5px rgba(102, 126, 234, 0.4);
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: bold;
-      margin-top: 15px;
-      transition: transform 0.2s;
-    }
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-    .link-container {
-      text-align: center;
-      margin-top: 20px;
-    }
-    .link-container p {
-      margin: 0;
-      color: #666;
-    }
-    .link-container a {
-      text-decoration: none;
-      color: #667eea;
-      font-weight: bold;
-      transition: color 0.2s;
-    }
-    .link-container a:hover {
-      color: #764ba2;
-    }
-    .error {
-      color: #d32f2f;
-      font-size: 0.9rem;
-      margin-top: 5px;
-      display: none;
-    }
-    .success {
-      color: #2e7d32;
-      font-size: 0.9rem;
-      margin-top: 5px;
-      display: none;
-    }
-    .loading {
-      display: none;
-      text-align: center;
-      color: #667eea;
-    }
-  </style>
-</head>
-<body>
-  <div class="form-box">
-    <h2>REGISTER</h2>
-    <form id="registerForm">
-      <input 
-        type="text" 
-        name="name" 
-        id="name"
-        placeholder="Enter your name" 
-        required
-      >
-      <input 
-        type="email" 
-        name="email" 
-        id="email"
-        placeholder="Enter your email" 
-        required
-      >
-      <input 
-        type="password" 
-        name="password" 
-        id="password"
-        placeholder="Enter your password" 
-        required
-      >
-      <input 
-        type="password" 
-        name="confirmPassword" 
-        id="confirmPassword"
-        placeholder="Confirm your password" 
-        required
-      >
-      <select name="role" id="role" required>
-        <option value="">Select your role</option>
-        <option value="manager">Manager</option>
-        <option value="procurement">Procurement Officer</option>
-        <option value="agent">Sales Agent</option>
-        <option value="director">Director</option>
-      </select>
-      <select name="branch" id="branch" required>
-        <option value="">Select your branch</option>
-        <option value="branch1">Branch 1</option>
-        <option value="branch2">Branch 2</option>
-      </select>
-      <input 
-        type="tel" 
-        name="contact" 
-        id="contact"
-        placeholder="Enter your phone number (10-15 digits)" 
-        pattern="[0-9]{10,15}"
-        required
-      >
-      <label for="photo" style="margin-top:8px; display:block; font-weight:normal; color:#333;">Profile Photo (optional)</label>
-      <input type="file" id="photo" name="photo" accept="image/*">
-      <div class="error" id="errorMessage"></div>
-      <div class="success" id="successMessage"></div>
-      <div class="loading" id="loading">Registering...</div>
-      <button type="submit">Register Now</button>
-    </form>
-    <div class="link-container">
-      <p>Already have an account? <a href="/login">Login now</a></p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: url('img/var.jpg');
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+      .form-box {
+        width: 400px;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+      .form-box h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 1.8rem;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 1rem;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 5px rgba(102, 126, 234, 0.4);
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: bold;
+        margin-top: 15px;
+        transition: transform 0.2s;
+      }
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+      .link-container {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .link-container p {
+        margin: 0;
+        color: #666;
+      }
+      .link-container a {
+        text-decoration: none;
+        color: #667eea;
+        font-weight: bold;
+        transition: color 0.2s;
+      }
+      .link-container a:hover {
+        color: #764ba2;
+      }
+      .error {
+        color: #d32f2f;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        display: none;
+      }
+      .success {
+        color: #2e7d32;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        display: none;
+      }
+      .loading {
+        display: none;
+        text-align: center;
+        color: #667eea;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-box">
+      <h2>REGISTER</h2>
+      <form id="registerForm">
+        <input
+          type="text"
+          name="name"
+          id="name"
+          placeholder="Enter your name"
+          required
+        />
+        <input
+          type="email"
+          name="email"
+          id="email"
+          placeholder="Enter your email"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          id="password"
+          placeholder="Enter your password"
+          required
+        />
+        <input
+          type="password"
+          name="confirmPassword"
+          id="confirmPassword"
+          placeholder="Confirm your password"
+          required
+        />
+        <select name="role" id="role" required>
+          <option value="">Select your role</option>
+          <option value="manager">Manager</option>
+          <option value="procurement">Procurement Officer</option>
+          <option value="agent">Sales Agent</option>
+          <option value="director">Director</option>
+        </select>
+        <select name="branch" id="branch" required>
+          <option value="">Select your branch</option>
+          <option value="branch1">Matugga</option>
+          <option value="branch2">Maganjo</option>
+        </select>
+        <input
+          type="tel"
+          name="contact"
+          id="contact"
+          placeholder="Enter your phone number (10-15 digits)"
+          pattern="[0-9]{10,15}"
+          required
+        />
+        <label
+          for="photo"
+          style="
+            margin-top: 8px;
+            display: block;
+            font-weight: normal;
+            color: #333;
+          "
+          >Profile Photo (optional)</label
+        >
+        <input type="file" id="photo" name="photo" accept="image/*" />
+        <div class="error" id="errorMessage"></div>
+        <div class="success" id="successMessage"></div>
+        <div class="loading" id="loading">Registering...</div>
+        <button type="submit">Register Now</button>
+      </form>
+      <div class="link-container">
+        <p>Already have an account? <a href="/login">Login now</a></p>
+      </div>
     </div>
-  </div>
 
-  <script>
-    const form = document.getElementById('registerForm');
-    const errorMessage = document.getElementById('errorMessage');
-    const successMessage = document.getElementById('successMessage');
-    const loading = document.getElementById('loading');
+    <script>
+      const form = document.getElementById("registerForm");
+      const errorMessage = document.getElementById("errorMessage");
+      const successMessage = document.getElementById("successMessage");
+      const loading = document.getElementById("loading");
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
-      const role = document.getElementById('role').value;
-      const branch = document.getElementById('branch').value;
-      const contact = document.getElementById('contact').value;
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-      // Clear previous messages
-      errorMessage.style.display = 'none';
-      successMessage.style.display = 'none';
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const confirmPassword =
+          document.getElementById("confirmPassword").value;
+        const role = document.getElementById("role").value;
+        const branch = document.getElementById("branch").value;
+        const contact = document.getElementById("contact").value;
 
-      // Validate passwords match
-      if (password !== confirmPassword) {
-        errorMessage.style.display = 'block';
-        errorMessage.textContent = 'Passwords do not match';
-        return;
-      }
+        // Clear previous messages
+        errorMessage.style.display = "none";
+        successMessage.style.display = "none";
 
-      // Validate password length
-      if (password.length < 6) {
-        errorMessage.style.display = 'block';
-        errorMessage.textContent = 'Password must be at least 6 characters';
-        return;
-      }
+        // Validate passwords match
+        if (password !== confirmPassword) {
+          errorMessage.style.display = "block";
+          errorMessage.textContent = "Passwords do not match";
+          return;
+        }
 
-      loading.style.display = 'block';
+        // Validate password length
+        if (password.length < 6) {
+          errorMessage.style.display = "block";
+          errorMessage.textContent = "Password must be at least 6 characters";
+          return;
+        }
 
-      try {
-          console.log('Attempting registration with email:', email, 'role:', role);
-          
+        loading.style.display = "block";
+
+        try {
+          console.log(
+            "Attempting registration with email:",
+            email,
+            "role:",
+            role,
+          );
+
           // Build FormData for multipart upload
           const formData = new FormData();
-          formData.append('name', name);
-          formData.append('email', email);
-          formData.append('password', password);
-          formData.append('confirmPassword', confirmPassword);
-          formData.append('role', role);
-          formData.append('branch', branch);
-          formData.append('contact', contact);
-          const photoInput = document.getElementById('photo');
+          formData.append("name", name);
+          formData.append("email", email);
+          formData.append("password", password);
+          formData.append("confirmPassword", confirmPassword);
+          formData.append("role", role);
+          formData.append("branch", branch);
+          formData.append("contact", contact);
+          const photoInput = document.getElementById("photo");
           if (photoInput && photoInput.files && photoInput.files[0]) {
-            formData.append('photo', photoInput.files[0]);
+            formData.append("photo", photoInput.files[0]);
           }
 
-          const response = await fetch('http://localhost:3000/api/auth/register', {
-            method: 'POST',
-            body: formData
-          });
+          const response = await fetch(
+            "http://localhost:3000/api/auth/register",
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
 
-        loading.style.display = 'none';
-        
-        console.log('Register response status:', response.status);
+          loading.style.display = "none";
 
-        // Check if response is ok
-        if (!response.ok) {
-          let errorText = 'Registration failed';
+          console.log("Register response status:", response.status);
+
+          // Check if response is ok
+          if (!response.ok) {
+            let errorText = "Registration failed";
+            try {
+              const data = await response.json();
+              errorText = data.error || "Registration failed";
+            } catch (e) {
+              // If response is not JSON, use default error
+              errorText = `Server error: ${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorText);
+          }
+
+          // Parse response as JSON
+          let data;
           try {
-            const data = await response.json();
-            errorText = data.error || 'Registration failed';
+            data = await response.json();
           } catch (e) {
-            // If response is not JSON, use default error
-            errorText = `Server error: ${response.status} ${response.statusText}`;
+            throw new Error("Server returned invalid response");
           }
-          throw new Error(errorText);
+
+          console.log("Registration successful, response:", data);
+          console.log("Role from response:", data.role);
+
+          // Store token in localStorage
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("role", data.role);
+          localStorage.setItem("userId", data.userId);
+          localStorage.setItem("userName", data.name);
+          if (data.photo) {
+            localStorage.setItem("userPhoto", data.photo);
+          }
+
+          console.log(
+            "Stored in localStorage - role:",
+            localStorage.getItem("role"),
+            "name:",
+            localStorage.getItem("userName"),
+          );
+
+          successMessage.style.display = "block";
+          successMessage.textContent =
+            "Registration successful! Redirecting to dashboard...";
+
+          // Clear form
+          form.reset();
+
+          // Redirect based on role
+          const roleRoutes = {
+            manager: "http://localhost:3000/manager-dashboard",
+            director: "http://localhost:3000/director-dashboard",
+            procurement: "http://localhost:3000/procurement-dashboard",
+            agent: "http://localhost:3000/agent-dashboard",
+          };
+
+          const redirectUrl =
+            roleRoutes[data.role] || "http://localhost:3000/manager-dashboard";
+          console.log("Redirecting to:", redirectUrl, "with role:", data.role);
+
+          // Redirect immediately
+          setTimeout(() => {
+            console.log("Now redirecting to:", redirectUrl);
+            window.location.href = redirectUrl;
+          }, 500);
+        } catch (error) {
+          loading.style.display = "none";
+          errorMessage.style.display = "block";
+          errorMessage.textContent = error.message;
+          console.error("Registration error:", error);
+          console.error("Error stack:", error.stack);
         }
-
-        // Parse response as JSON
-        let data;
-        try {
-          data = await response.json();
-        } catch (e) {
-          throw new Error('Server returned invalid response');
-        }
-
-        console.log('Registration successful, response:', data);
-        console.log('Role from response:', data.role);
-
-        // Store token in localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('userName', data.name);
-        if (data.photo) {
-          localStorage.setItem('userPhoto', data.photo);
-        }
-
-        console.log('Stored in localStorage - role:', localStorage.getItem('role'), 'name:', localStorage.getItem('userName'));
-
-        successMessage.style.display = 'block';
-        successMessage.textContent = 'Registration successful! Redirecting to dashboard...';
-
-        // Clear form
-        form.reset();
-
-        // Redirect based on role
-        const roleRoutes = {
-          'manager': 'http://localhost:3000/manager-dashboard',
-          'director': 'http://localhost:3000/director-dashboard',
-          'procurement': 'http://localhost:3000/procurement-dashboard',
-          'agent': 'http://localhost:3000/agent-dashboard'
-        };
-
-        const redirectUrl = roleRoutes[data.role] || 'http://localhost:3000/manager-dashboard';
-        console.log('Redirecting to:', redirectUrl, 'with role:', data.role);
-        
-        // Redirect immediately
-        setTimeout(() => {
-          console.log('Now redirecting to:', redirectUrl);
-          window.location.href = redirectUrl;
-        }, 500);
-
-      } catch (error) {
-        loading.style.display = 'none';
-        errorMessage.style.display = 'block';
-        errorMessage.textContent = error.message;
-        console.error('Registration error:', error);
-        console.error('Error stack:', error.stack);
-      }
-    });
-  </script>
-</body>
+      });
+    </script>
+  </body>
 </html>

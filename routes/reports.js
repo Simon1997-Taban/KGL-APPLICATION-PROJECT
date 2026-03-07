@@ -15,6 +15,7 @@
  * - GET /api/reports/branch-report - Branch sales (Managers & Directors)
  * - GET /api/reports/inventory - Inventory status and valuation
  * - GET /api/reports/agent-performance - Agent performance metrics
+ * - GET /api/reports/dashboard-metrics - Live dashboard widgets (Managers/Agents/Procurement/Directors)
  * 
  * Access Control:
  * - All endpoints require JWT token (verifyToken)
@@ -34,6 +35,114 @@ const Sale = require('../models/Sale');
 const CreditSale = require('../models/CreditSale');
 const Produce = require('../models/Produce');
 const { verifyToken, populateUser, onlyDirectors, authorizeRole } = require('../middleware/auth');
+
+// Role guard for dashboard metrics (managers, agents, procurement, directors)
+const dashboardRoles = authorizeRole(['director', 'manager', 'agent', 'procurement']);
+
+// Helpers
+const startOfDay = (d) => {
+  const copy = new Date(d);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+};
+
+const sumByDateRange = (items, field, start, end, amountField) =>
+  items.reduce((sum, item) => {
+    const ts = new Date(item[field]);
+    if (ts >= start && (!end || ts < end)) {
+      return sum + (item[amountField] || 0);
+    }
+    return sum;
+  }, 0);
+
+// Dashboard metrics for unified UI
+router.get('/dashboard-metrics', verifyToken, populateUser, dashboardRoles, async (req, res) => {
+  try {
+    const now = new Date();
+    const todayStart = startOfDay(now);
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - 6);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+    // Branch scoping
+    let branch = req.query.branch;
+    if (req.user.role !== 'director') {
+      branch = req.userData.branch;
+    }
+    const branchFilter = branch && ['branch1', 'branch2'].includes(branch) ? { branch } : {};
+
+    const [sales, creditPaid, creditStatuses, lowStock, outOfStock] = await Promise.all([
+      // Pull month worth of sales for aggregation
+      Sale.find({ ...branchFilter, createdAt: { $gte: monthStart } }).lean(),
+      CreditSale.find({ ...branchFilter, status: 'paid', updatedAt: { $gte: monthStart } }).lean(),
+      CreditSale.find({ ...branchFilter, status: { $in: ['pending', 'overdue'] } }).lean(),
+      Produce.find({ ...branchFilter, stock: { $gt: 0, $lte: 5 } }).sort({ stock: 1 }).lean(),
+      Produce.find({ ...branchFilter, stock: { $lte: 0 } }).lean()
+    ]);
+
+    // Revenue totals (regular sales use createdAt, credit revenue uses updatedAt when paid)
+    const revenueToday = sumByDateRange(sales, 'createdAt', todayStart, null, 'amountPaid') +
+      sumByDateRange(creditPaid, 'updatedAt', todayStart, null, 'amountDue');
+    const revenueWeek = sumByDateRange(sales, 'createdAt', weekStart, null, 'amountPaid') +
+      sumByDateRange(creditPaid, 'updatedAt', weekStart, null, 'amountDue');
+    const revenueMonth = sumByDateRange(sales, 'createdAt', monthStart, null, 'amountPaid') +
+      sumByDateRange(creditPaid, 'updatedAt', monthStart, null, 'amountDue');
+
+    // Counts
+    const salesTodayCount = sales.filter(s => new Date(s.createdAt) >= todayStart).length;
+    const creditClearedLastHour = creditPaid.filter(c => new Date(c.updatedAt) >= hourAgo).length;
+    const pendingCredit = creditStatuses.filter(c => c.status === 'pending');
+    const overdueCredit = creditStatuses.filter(c => c.status === 'overdue');
+
+    // Yesterday revenue (for delta)
+    const revenueYesterday = sumByDateRange(sales, 'createdAt', yesterdayStart, todayStart, 'amountPaid') +
+      sumByDateRange(creditPaid, 'updatedAt', yesterdayStart, todayStart, 'amountDue');
+
+    const highlights = [];
+    const branchLabel = branch || 'all branches';
+    if (revenueYesterday > 0) {
+      const delta = ((revenueToday - revenueYesterday) / revenueYesterday) * 100;
+      highlights.push(`${branchLabel} revenue ${delta >= 0 ? 'up' : 'down'} ${delta.toFixed(1)}% vs yesterday`);
+    } else {
+      highlights.push(`${branchLabel} revenue today: ${revenueToday.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}`);
+    }
+    highlights.push(`Credit sales cleared in last hour: ${creditClearedLastHour}`);
+    if (lowStock.length > 0) {
+      const names = lowStock.slice(0, 3).map(p => p.name).join(', ');
+      highlights.push(`${lowStock.length} product${lowStock.length > 1 ? 's' : ''} nearing stock-out: ${names}${lowStock.length > 3 ? '…' : ''}`);
+    }
+
+    res.json({
+      branch: branch || 'all',
+      revenue: {
+        today: revenueToday,
+        week: revenueWeek,
+        month: revenueMonth
+      },
+      sales: {
+        todayCount: salesTodayCount,
+        monthCount: sales.length
+      },
+      credits: {
+        clearedLastHour: creditClearedLastHour,
+        pendingCount: pendingCredit.length,
+        pendingTotal: pendingCredit.reduce((sum, c) => sum + c.amountDue, 0),
+        overdueCount: overdueCredit.length,
+        overdueTotal: overdueCredit.reduce((sum, c) => sum + c.amountDue, 0)
+      },
+      inventory: {
+        lowStock: lowStock.map(p => ({ name: p.name, stock: p.stock, branch: p.branch })),
+        outOfStock: outOfStock.map(p => ({ name: p.name, stock: p.stock, branch: p.branch }))
+      },
+      highlights
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Get aggregated sales report (Directors only)
 router.get('/sales-summary', verifyToken, populateUser, onlyDirectors, async (req, res) => {
@@ -109,8 +218,8 @@ router.get('/sales-summary', verifyToken, populateUser, onlyDirectors, async (re
   }
 });
 
-// Get branch-wise sales report (Managers can see their branch, Directors see all)
-router.get('/branch-report', verifyToken, populateUser, authorizeRole(['manager', 'director']), async (req, res) => {
+// Get branch-wise sales report (Directors only; managers removed per updated role scope)
+router.get('/branch-report', verifyToken, populateUser, onlyDirectors, async (req, res) => {
   try {
     let branch = req.query.branch;
 
@@ -170,8 +279,8 @@ router.get('/branch-report', verifyToken, populateUser, authorizeRole(['manager'
   }
 });
 
-// Get inventory report
-router.get('/inventory', verifyToken, async (req, res) => {
+// Get inventory report (Directors only)
+router.get('/inventory', verifyToken, onlyDirectors, async (req, res) => {
   try {
     const { branch } = req.query;
     const query = {};
@@ -210,8 +319,8 @@ router.get('/inventory', verifyToken, async (req, res) => {
   }
 });
 
-// Get performance report (sales by agent over time)
-router.get('/agent-performance', verifyToken, populateUser, authorizeRole(['manager', 'director']), async (req, res) => {
+// Get performance report (sales by agent over time) - Directors only
+router.get('/agent-performance', verifyToken, populateUser, onlyDirectors, async (req, res) => {
   try {
     const { branch, startDate, endDate } = req.query;
 

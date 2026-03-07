@@ -63,6 +63,7 @@ const procurementRoutes = require('./routes/procurement');
 const salesRoutes = require('./routes/sales');
 const creditSalesRoutes = require('./routes/creditsales');
 const reportsRoutes = require('./routes/reports');
+const adminRoutes = require('./routes/admin');
 
 // Register routes
 app.use('/api/auth', authRoutes);
@@ -70,6 +71,7 @@ app.use('/api/procurement', procurementRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/credit-sales', creditSalesRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Landing page - redirect to login
 app.get('/', (req, res) => {
@@ -85,21 +87,34 @@ app.get('/register', (req, res) => {
   res.sendFile(path.join(__dirname, 'login', 'register.html'));
 });
 
-// Role-based dashboard routes
-app.get('/manager-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'login', 'manager.html'));
+// Unified dashboard
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login', 'dashboard.html'));
 });
 
-app.get('/director-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'login', 'admin.html'));
+// Legacy routes redirect to the unified dashboard
+app.get(['/manager-dashboard', '/director-dashboard', '/agent-dashboard', '/procurement-dashboard'], (req, res) => {
+  res.redirect('/dashboard');
 });
 
-app.get('/procurement-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'login', 'procurement.html'));
+app.get('/record-sale', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login', 'record-sale.html'));
 });
 
-app.get('/agent-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'login', 'agent.html'));
+app.get('/inventory', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login', 'inventory.html'));
+});
+
+app.get('/credit-sales', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login', 'credit-sales.html'));
+});
+
+app.get('/users', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login', 'users.html'));
+});
+
+app.get('/sales-report', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login', 'sales-report.html'));
 });
 
 // 404 handler for API routes

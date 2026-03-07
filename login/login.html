@@ -9,7 +9,7 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background:  url('img/Mango.jpg');
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -22,6 +22,12 @@
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+    .form-box h1 {
+       text-align: center;
+      color: #4539e4;
+      margin-bottom: 30px;
+      font-size: 1.5rem;
     }
     .form-box h2 {
       text-align: center;
@@ -92,6 +98,7 @@
 </head>
 <body>
   <div class="form-box">
+    <h1> Well Come Back </h1>
     <h2>LOGIN</h2>
     <form id="loginForm">
       <input 
@@ -118,6 +125,7 @@
   </div>
 
   <script>
+    const API_BASE = 'http://localhost:3000';
     const form = document.getElementById('loginForm');
     const errorMessage = document.getElementById('errorMessage');
     const loading = document.getElementById('loading');
@@ -134,7 +142,7 @@
       try {
         console.log('Attempting login with email:', email);
         
-        const response = await fetch('http://localhost:3000/api/auth/login', {
+        const response = await fetch(`${API_BASE}/api/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -166,6 +174,9 @@
         localStorage.setItem('role', data.role);
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('userName', data.name);
+        if (data.branch) {
+          localStorage.setItem('branch', data.branch);
+        }
         if (data.photo) {
           localStorage.setItem('userPhoto', data.photo);
         }
@@ -173,17 +184,8 @@
         console.log('Stored in localStorage - role:', localStorage.getItem('role'));
 
         // Redirect based on role
-        const roleRoutes = {
-          'manager': 'http://localhost:3000/manager-dashboard',
-          'director': 'http://localhost:3000/director-dashboard',
-          'procurement': 'http://localhost:3000/procurement-dashboard',
-          'agent': 'http://localhost:3000/agent-dashboard'
-        };
-
-        const redirectUrl = roleRoutes[data.role] || 'http://localhost:3000/manager-dashboard';
+        const redirectUrl = `${API_BASE}/dashboard?role=${encodeURIComponent(data.role)}`;
         console.log('Redirecting to:', redirectUrl, 'with role:', data.role);
-        
-        // Redirect
         window.location.href = redirectUrl;
 
       } catch (error) {

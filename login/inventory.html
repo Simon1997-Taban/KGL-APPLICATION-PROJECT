@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Management - KGL</title>
+  <style>
+    :root {
+      --bg: #0b1221;
+      --panel: #0f172a;
+      --accent: #10b981;
+      --accent-2: #38bdf8;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: rgba(255,255,255,0.06);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1221;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .card.out-of-stock {
+      border-color: rgba(244,63,94,0.5);
+      background: rgba(244,63,94,0.05);
+    }
+    .card.low-stock {
+      border-color: rgba(251,191,36,0.5);
+      background: rgba(251,191,36,0.05);
+    }
+    .card h3 {
+      margin: 0 0 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge.out { background: rgba(244,63,94,0.18); color: #f87171; }
+    .badge.low { background: rgba(251,191,36,0.18); color: #fbbf24; }
+    .badge.ok { background: rgba(16,185,129,0.16); color: var(--accent); }
+    .info { color: var(--muted); font-size: 0.9rem; margin: 4px 0; }
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    .alert {
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.success { background: rgba(16,185,129,0.16); color: var(--accent); border: 1px solid var(--accent); }
+    .alert.error { background: rgba(244,63,94,0.18); color: #f87171; border: 1px solid #f87171; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1 style="margin:0 0 4px 0">Inventory Management</h1>
+        <p style="margin:0;color:var(--muted)">Warehouse procurement & stock levels</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" id="addBtn">+ Add Procurement</button>
+        <a href="/dashboard" class="btn btn-secondary">← Dashboard</a>
+      </div>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <div class="grid" id="inventory"></div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Add Procurement</h2>
+      <form id="procurementForm">
+        <input type="hidden" id="itemId">
+        <div class="form-group">
+          <label>Product Name *</label>
+          <input type="text" id="name" required>
+        </div>
+        <div class="form-group">
+          <label>Type/Variety *</label>
+          <input type="text" id="type" required>
+        </div>
+        <div class="form-group">
+          <label>Stock Quantity *</label>
+          <input type="number" id="stock" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+          <label>Cost Price *</label>
+          <input type="number" id="cost" step="0.01" min="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Sale Price *</label>
+          <input type="number" id="salePrice" step="0.01" min="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Dealer Name *</label>
+          <input type="text" id="dealerName" required>
+        </div>
+        <div class="form-group">
+          <label>Dealer Contact *</label>
+          <input type="tel" id="contact" pattern="[0-9]{10,15}" required>
+        </div>
+        <div class="form-group">
+          <label>Branch *</label>
+          <select id="branch" required>
+            <option value="">Select branch</option>
+            <option value="branch1">Matugga</option>
+            <option value="branch2">Maganjo</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button type="submit" class="btn" style="flex:1">Save</button>
+          <button type="button" class="btn btn-secondary" id="cancelBtn" style="flex:1">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login';
+
+    let inventory = [];
+
+    async function loadInventory() {
+      try {
+        const res = await fetch(`${API_BASE}/api/procurement`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        inventory = data.produces || [];
+        renderInventory();
+      } catch (err) {
+        showAlert('Failed to load inventory', 'error');
+      }
+    }
+
+    function renderInventory() {
+      const grid = document.getElementById('inventory');
+      if (!inventory.length) {
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">No inventory items yet</p>';
+        return;
+      }
+
+      grid.innerHTML = inventory.map(item => {
+        const status = item.stock <= 0 ? 'out' : item.stock <= 5 ? 'low' : 'ok';
+        const statusText = item.stock <= 0 ? 'OUT OF STOCK' : item.stock <= 5 ? 'LOW STOCK' : 'IN STOCK';
+        const cardClass = item.stock <= 0 ? 'out-of-stock' : item.stock <= 5 ? 'low-stock' : '';
+        
+        return `
+          <div class="card ${cardClass}">
+            <h3>
+              ${item.name}
+              <span class="badge ${status}">${statusText}</span>
+            </h3>
+            <div class="info">Type: ${item.type}</div>
+            <div class="info">Stock: <strong>${item.stock}</strong> units</div>
+            <div class="info">Cost: ${item.cost} | Sale: ${item.salePrice}</div>
+            <div class="info">Dealer: ${item.dealerName}</div>
+            <div class="info">Branch: ${item.branch}</div>
+            <div class="actions">
+              <button class="btn-small" onclick="editItem('${item._id}')">Edit</button>
+              <button class="btn-small" onclick="updateStock('${item._id}')">Update Stock</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('addBtn').addEventListener('click', () => {
+      document.getElementById('modalTitle').textContent = 'Add Procurement';
+      document.getElementById('procurementForm').reset();
+      document.getElementById('itemId').value = '';
+      document.getElementById('modal').classList.add('active');
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      document.getElementById('modal').classList.remove('active');
+    });
+
+    window.editItem = (id) => {
+      const item = inventory.find(i => i._id === id);
+      if (!item) return;
+
+      document.getElementById('modalTitle').textContent = 'Edit Procurement';
+      document.getElementById('itemId').value = item._id;
+      document.getElementById('name').value = item.name;
+      document.getElementById('type').value = item.type;
+      document.getElementById('stock').value = item.stock;
+      document.getElementById('cost').value = item.cost;
+      document.getElementById('salePrice').value = item.salePrice;
+      document.getElementById('dealerName').value = item.dealerName;
+      document.getElementById('contact').value = item.contact;
+      document.getElementById('branch').value = item.branch;
+      document.getElementById('modal').classList.add('active');
+    };
+
+    window.updateStock = async (id) => {
+      const item = inventory.find(i => i._id === id);
+      const newStock = prompt(`Update stock for ${item.name}\nCurrent: ${item.stock}`, item.stock);
+      if (newStock === null) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/procurement/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ stock: parseFloat(newStock) })
+        });
+
+        if (res.ok) {
+          showAlert('Stock updated successfully', 'success');
+          loadInventory();
+        } else {
+          const data = await res.json();
+          showAlert(data.error || 'Failed to update stock', 'error');
+        }
+      } catch (err) {
+        showAlert('Network error', 'error');
+      }
+    };
+
+    document.getElementById('procurementForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('itemId').value;
+      const data = {
+        name: document.getElementById('name').value,
+        type: document.getElementById('type').value,
+        stock: parseFloat(document.getElementById('stock').value),
+        cost: parseFloat(document.getElementById('cost').value),
+        salePrice: parseFloat(document.getElementById('salePrice').value),
+        dealerName: document.getElementById('dealerName').value,
+        contact: document.getElementById('contact').value,
+        branch: document.getElementById('branch').value
+      };
+
+      try {
+        const url = id ? `${API_BASE}/api/procurement/${id}` : `${API_BASE}/api/procurement`;
+        const method = id ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+          showAlert(id ? 'Updated successfully' : 'Added successfully', 'success');
+          document.getElementById('modal').classList.remove('active');
+          loadInventory();
+        } else {
+          const result = await res.json();
+          showAlert(result.error || 'Operation failed', 'error');
+        }
+      } catch (err) {
+        showAlert('Network error', 'error');
+      }
+    });
+
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      alert.textContent = message;
+      alert.className = `alert ${type}`;
+      alert.style.display = 'block';
+      setTimeout(() => alert.style.display = 'none', 5000);
+    }
+
+    loadInventory();
+  </script>
+</body>
+</html>

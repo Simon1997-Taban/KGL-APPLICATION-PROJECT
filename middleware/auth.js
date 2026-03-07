@@ -101,7 +101,7 @@ const authorizeRole = (allowedRoles) => {
  * Restricts access to users with 'manager' or 'director' role.
  * Used for: Procurement recording, produce updates, manager reports
  */
-const onlyManagers = authorizeRole(['manager', 'director']);
+const onlyManagers = authorizeRole(['manager']);
 
 /**
  * Only Managers and Agents Middleware
@@ -109,7 +109,7 @@ const onlyManagers = authorizeRole(['manager', 'director']);
  * Restricts access to users with 'manager', 'agent', or 'director' role.
  * Used for: Sales recording, credit sales recording
  */
-const onlyManagersAndAgents = authorizeRole(['manager', 'agent', 'director']);
+const onlyManagersAndAgents = authorizeRole(['manager', 'agent']);
 
 /**
  * Only Directors Middleware

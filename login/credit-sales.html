@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Sales - KGL</title>
+  <style>
+    :root {
+      --bg: #0b1221;
+      --panel: #0f172a;
+      --accent: #10b981;
+      --accent-2: #38bdf8;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: rgba(255,255,255,0.06);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1221;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .filters {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    select {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+    }
+    .table-container {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: rgba(255,255,255,0.02);
+      font-weight: 600;
+    }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge.pending { background: rgba(251,191,36,0.18); color: #fbbf24; }
+    .badge.paid { background: rgba(16,185,129,0.16); color: var(--accent); }
+    .badge.overdue { background: rgba(244,63,94,0.18); color: #f87171; }
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: var(--accent);
+      color: #0b1221;
+      font-weight: 600;
+    }
+    .btn-small:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .alert {
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.success { background: rgba(16,185,129,0.16); color: var(--accent); border: 1px solid var(--accent); }
+    .alert.error { background: rgba(244,63,94,0.18); color: #f87171; border: 1px solid #f87171; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1 style="margin:0 0 4px 0">Credit Sales Management</h1>
+        <p style="margin:0;color:var(--muted)">Track and update credit payment status</p>
+      </div>
+      <a href="/dashboard" class="btn btn-secondary">← Dashboard</a>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <div class="filters">
+      <label style="color:var(--muted)">Filter:</label>
+      <select id="statusFilter">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="paid">Paid</option>
+        <option value="overdue">Overdue</option>
+      </select>
+      <select id="branchFilter">
+        <option value="">All Branches</option>
+        <option value="branch1">Matugga</option>
+        <option value="branch2">Maganjo</option>
+      </select>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Buyer</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Amount Due</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="creditList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login';
+
+    let creditSales = [];
+
+    async function loadCreditSales() {
+      try {
+        const status = document.getElementById('statusFilter').value;
+        const branch = document.getElementById('branchFilter').value;
+        const params = new URLSearchParams();
+        if (status) params.append('status', status);
+        if (branch) params.append('branch', branch);
+
+        const res = await fetch(`${API_BASE}/api/credit-sales?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        creditSales = data.creditSales || [];
+        renderCreditSales();
+      } catch (err) {
+        showAlert('Failed to load credit sales', 'error');
+      }
+    }
+
+    function renderCreditSales() {
+      const tbody = document.getElementById('creditList');
+      if (!creditSales.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No credit sales found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = creditSales.map(sale => {
+        const dueDate = new Date(sale.dueDate).toLocaleDateString();
+        const isPaid = sale.status === 'paid';
+        
+        return `
+          <tr>
+            <td>
+              <strong>${sale.buyerName}</strong><br>
+              <small style="color:var(--muted)">${sale.contact}</small>
+            </td>
+            <td>${sale.produceName}</td>
+            <td>${sale.tonnage}</td>
+            <td>${sale.amountDue.toFixed(2)}</td>
+            <td>${dueDate}</td>
+            <td><span class="badge ${sale.status}">${sale.status.toUpperCase()}</span></td>
+            <td>
+              <button class="btn-small" onclick="markAsPaid('${sale._id}')" ${isPaid ? 'disabled' : ''}>
+                ${isPaid ? 'Paid' : 'Mark Paid'}
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.markAsPaid = async (id) => {
+      if (!confirm('Mark this credit sale as paid?')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/credit-sales/${id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: 'paid' })
+        });
+
+        if (res.ok) {
+          showAlert('Credit sale marked as paid', 'success');
+          loadCreditSales();
+        } else {
+          const data = await res.json();
+          showAlert(data.error || 'Failed to update status', 'error');
+        }
+      } catch (err) {
+        showAlert('Network error', 'error');
+      }
+    };
+
+    document.getElementById('statusFilter').addEventListener('change', loadCreditSales);
+    document.getElementById('branchFilter').addEventListener('change', loadCreditSales);
+
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      alert.textContent = message;
+      alert.className = `alert ${type}`;
+      alert.style.display = 'block';
+      setTimeout(() => alert.style.display = 'none', 5000);
+    }
+
+    loadCreditSales();
+  </script>
+</body>
+</html>

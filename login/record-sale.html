@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Record Sale - KGL</title>
+  <style>
+    :root {
+      --bg: #0b1221;
+      --panel: #0f172a;
+      --accent: #10b981;
+      --accent-2: #38bdf8;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: rgba(255,255,255,0.06);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    h1 { margin: 0 0 8px 0; }
+    .subtitle { color: var(--muted); margin-bottom: 24px; }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .tab {
+      padding: 10px 20px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1221;
+      border-color: transparent;
+    }
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1221;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .back-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+      text-decoration: none;
+      margin-bottom: 16px;
+    }
+    .alert {
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.success {
+      background: rgba(16,185,129,0.16);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .alert.error {
+      background: rgba(244,63,94,0.18);
+      color: #f87171;
+      border: 1px solid #f87171;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .info-box {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(56,189,248,0.08);
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+    <h1>Record Sale</h1>
+    <p class="subtitle">Record cash or credit sales based on available inventory</p>
+
+    <div class="alert" id="alert"></div>
+
+    <div class="tabs">
+      <button class="tab active" data-type="cash">Cash Sale</button>
+      <button class="tab" data-type="credit">Credit Sale</button>
+    </div>
+
+    <!-- Cash Sale Form -->
+    <form id="cashForm" class="form-section active">
+      <div class="form-group">
+        <label>Select Product *</label>
+        <select id="cashProduct" required>
+          <option value="">Loading products...</option>
+        </select>
+      </div>
+      <div class="info-box" id="cashProductInfo" style="display:none;">
+        <strong>Product Info:</strong><br>
+        Stock: <span id="cashStock">--</span> units<br>
+        Price: <span id="cashPrice">--</span> per unit
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Quantity (units) *</label>
+          <input type="number" id="cashQuantity" step="0.01" min="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Total Amount</label>
+          <input type="text" id="cashAmount" readonly>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Buyer Name *</label>
+        <input type="text" id="cashBuyer" required>
+      </div>
+      <div class="form-group">
+        <label>Branch *</label>
+        <select id="cashBranch" required>
+          <option value="">Select branch</option>
+          <option value="branch1">Matugga</option>
+          <option value="branch2">Maganjo</option>
+        </select>
+      </div>
+      <button type="submit" class="btn">Record Cash Sale</button>
+    </form>
+
+    <!-- Credit Sale Form -->
+    <form id="creditForm" class="form-section">
+      <div class="form-group">
+        <label>Select Product *</label>
+        <select id="creditProduct" required>
+          <option value="">Loading products...</option>
+        </select>
+      </div>
+      <div class="info-box" id="creditProductInfo" style="display:none;">
+        <strong>Product Info:</strong><br>
+        Stock: <span id="creditStock">--</span> units<br>
+        Price: <span id="creditPrice">--</span> per unit
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Quantity (units) *</label>
+          <input type="number" id="creditQuantity" step="0.01" min="0.01" required>
+        </div>
+        <div class="form-group">
+          <label>Total Amount Due</label>
+          <input type="text" id="creditAmount" readonly>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Buyer Name *</label>
+        <input type="text" id="creditBuyer" required>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="creditEmail" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number *</label>
+          <input type="tel" id="creditPhone" pattern="[0-9]{10,15}" required>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>NIN Number *</label>
+          <input type="text" id="creditNin" minlength="6" required>
+        </div>
+        <div class="form-group">
+          <label>Nationality *</label>
+          <input type="text" id="creditNationality" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Location/Address *</label>
+        <input type="text" id="creditLocation" required>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>Date Taking (Dispatch) *</label>
+          <input type="date" id="creditDispatch" required>
+        </div>
+        <div class="form-group">
+          <label>Date Returning (Due Date) *</label>
+          <input type="date" id="creditReturn" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Branch *</label>
+        <select id="creditBranch" required>
+          <option value="">Select branch</option>
+          <option value="branch1">Matugga</option>
+          <option value="branch2">Maganjo</option>
+        </select>
+      </div>
+      <button type="submit" class="btn">Record Credit Sale</button>
+    </form>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    let products = [];
+    let selectedCashProduct = null;
+    let selectedCreditProduct = null;
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const type = tab.dataset.type;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(type === 'cash' ? 'cashForm' : 'creditForm').classList.add('active');
+      });
+    });
+
+    // Load products
+    async function loadProducts() {
+      try {
+        const res = await fetch(`${API_BASE}/api/procurement`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        products = data.produces || [];
+        
+        const cashSelect = document.getElementById('cashProduct');
+        const creditSelect = document.getElementById('creditProduct');
+        
+        const options = products.map(p => {
+          const disabled = p.stock <= 0 ? 'disabled' : '';
+          const stockLabel = p.stock <= 0 ? '(OUT OF STOCK)' : `(Stock: ${p.stock})`;
+          return `<option value="${p._id}" ${disabled}>${p.name} - ${p.type} ${stockLabel}</option>`;
+        }).join('');
+        
+        cashSelect.innerHTML = '<option value="">Select a product</option>' + options;
+        creditSelect.innerHTML = '<option value="">Select a product</option>' + options;
+      } catch (err) {
+        showAlert('Failed to load products', 'error');
+      }
+    }
+
+    // Product selection handlers
+    document.getElementById('cashProduct').addEventListener('change', (e) => {
+      selectedCashProduct = products.find(p => p._id === e.target.value);
+      if (selectedCashProduct) {
+        document.getElementById('cashProductInfo').style.display = 'block';
+        document.getElementById('cashStock').textContent = selectedCashProduct.stock;
+        document.getElementById('cashPrice').textContent = selectedCashProduct.salePrice;
+        updateCashAmount();
+      }
+    });
+
+    document.getElementById('creditProduct').addEventListener('change', (e) => {
+      selectedCreditProduct = products.find(p => p._id === e.target.value);
+      if (selectedCreditProduct) {
+        document.getElementById('creditProductInfo').style.display = 'block';
+        document.getElementById('creditStock').textContent = selectedCreditProduct.stock;
+        document.getElementById('creditPrice').textContent = selectedCreditProduct.salePrice;
+        updateCreditAmount();
+      }
+    });
+
+    // Quantity change handlers
+    document.getElementById('cashQuantity').addEventListener('input', updateCashAmount);
+    document.getElementById('creditQuantity').addEventListener('input', updateCreditAmount);
+
+    function updateCashAmount() {
+      const qty = parseFloat(document.getElementById('cashQuantity').value) || 0;
+      if (selectedCashProduct) {
+        const total = qty * selectedCashProduct.salePrice;
+        document.getElementById('cashAmount').value = total.toFixed(2);
+      }
+    }
+
+    function updateCreditAmount() {
+      const qty = parseFloat(document.getElementById('creditQuantity').value) || 0;
+      if (selectedCreditProduct) {
+        const total = qty * selectedCreditProduct.salePrice;
+        document.getElementById('creditAmount').value = total.toFixed(2);
+      }
+    }
+
+    // Form submissions
+    document.getElementById('cashForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('.btn');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/sales`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            produceName: selectedCashProduct.name,
+            tonnage: parseFloat(document.getElementById('cashQuantity').value),
+            buyerName: document.getElementById('cashBuyer').value,
+            branch: document.getElementById('cashBranch').value
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('Cash sale recorded successfully!', 'success');
+          const saleData = await res.json();
+          if (confirm('Sale recorded! Print receipt?')) {
+            printReceipt({
+              buyerName: document.getElementById('cashBuyer').value,
+              produceName: selectedCashProduct.name,
+              tonnage: parseFloat(document.getElementById('cashQuantity').value),
+              amount: parseFloat(document.getElementById('cashAmount').value),
+              saleType: 'cash',
+              branch: document.getElementById('cashBranch').value,
+              createdAt: new Date()
+            });
+          }
+          e.target.reset();
+          document.getElementById('cashProductInfo').style.display = 'none';
+          loadProducts();
+        } else {
+          showAlert(data.error || 'Failed to record sale', 'error');
+        }
+      } catch (err) {
+        showAlert('Network error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Record Cash Sale';
+      }
+    });
+
+    document.getElementById('creditForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('.btn');
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/credit-sales`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            buyerName: document.getElementById('creditBuyer').value,
+            email: document.getElementById('creditEmail').value,
+            contact: document.getElementById('creditPhone').value,
+            nin: document.getElementById('creditNin').value,
+            nationality: document.getElementById('creditNationality').value,
+            location: document.getElementById('creditLocation').value,
+            produceName: selectedCreditProduct.name,
+            tonnage: parseFloat(document.getElementById('creditQuantity').value),
+            dispatchDate: document.getElementById('creditDispatch').value,
+            returnDate: document.getElementById('creditReturn').value,
+            dueDate: document.getElementById('creditReturn').value,
+            branch: document.getElementById('creditBranch').value
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('Credit sale recorded successfully!', 'success');
+          const saleData = await res.json();
+          if (confirm('Credit sale recorded! Print receipt?')) {
+            printReceipt({
+              buyerName: document.getElementById('creditBuyer').value,
+              produceName: selectedCreditProduct.name,
+              tonnage: parseFloat(document.getElementById('creditQuantity').value),
+              amount: parseFloat(document.getElementById('creditAmount').value),
+              saleType: 'credit',
+              branch: document.getElementById('creditBranch').value,
+              contact: document.getElementById('creditPhone').value,
+              nin: document.getElementById('creditNin').value,
+              dueDate: document.getElementById('creditReturn').value,
+              status: 'pending',
+              createdAt: new Date()
+            });
+          }
+          e.target.reset();
+          document.getElementById('creditProductInfo').style.display = 'none';
+          loadProducts();
+        } else {
+          showAlert(data.error || 'Failed to record credit sale', 'error');
+        }
+      } catch (err) {
+        showAlert('Network error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Record Credit Sale';
+      }
+    });
+
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      alert.textContent = message;
+      alert.className = `alert ${type}`;
+      alert.style.display = 'block';
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 5000);
+    }
+
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('creditDispatch').value = today;
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    document.getElementById('creditReturn').value = nextWeek.toISOString().split('T')[0];
+
+    function printReceipt(sale) {
+      const receiptWindow = window.open('', '_blank', 'width=400,height=600');
+      receiptWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Receipt - ${sale.buyerName}</title>
+          <style>
+            body { font-family: monospace; padding: 20px; max-width: 400px; margin: 0 auto; }
+            h2 { text-align: center; margin: 0; }
+            .line { border-top: 2px dashed #000; margin: 10px 0; }
+            .row { display: flex; justify-content: space-between; margin: 5px 0; }
+            .total { font-weight: bold; font-size: 1.2em; }
+            @media print { button { display: none; } }
+          </style>
+        </head>
+        <body>
+          <h2>KGL RECEIPT</h2>
+          <div class="line"></div>
+          <div class="row"><span>Date:</span><span>${new Date(sale.createdAt).toLocaleString()}</span></div>
+          <div class="row"><span>Branch:</span><span>${sale.branch}</span></div>
+          <div class="line"></div>
+          <div class="row"><span>Buyer:</span><span>${sale.buyerName}</span></div>
+          ${sale.contact ? `<div class="row"><span>Contact:</span><span>${sale.contact}</span></div>` : ''}
+          ${sale.nin ? `<div class="row"><span>NIN:</span><span>${sale.nin}</span></div>` : ''}
+          <div class="line"></div>
+          <div class="row"><span>Product:</span><span>${sale.produceName}</span></div>
+          <div class="row"><span>Quantity:</span><span>${sale.tonnage} units</span></div>
+          <div class="row"><span>Type:</span><span>${sale.saleType.toUpperCase()}</span></div>
+          <div class="line"></div>
+          <div class="row total"><span>TOTAL:</span><span>UGX ${sale.amount.toFixed(2)}</span></div>
+          ${sale.status ? `<div class="row"><span>Status:</span><span>${sale.status.toUpperCase()}</span></div>` : ''}
+          ${sale.dueDate ? `<div class="row"><span>Due Date:</span><span>${new Date(sale.dueDate).toLocaleDateString()}</span></div>` : ''}
+          <div class="line"></div>
+          <p style="text-align:center;font-size:0.9em">Thank you for your business!</p>
+          <button onclick="window.print()" style="width:100%;padding:10px;margin-top:10px">Print Receipt</button>
+        </body>
+        </html>
+      `);
+      receiptWindow.document.close();
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>

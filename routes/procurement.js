@@ -62,11 +62,8 @@ router.post('/', verifyToken, populateUser, onlyManagers, validateProcurement, a
   try {
     const { name, type, stock, cost, dealerName, branch, contact, salePrice } = req.body;
 
-    // Verify manager's branch matches procurement branch
-    // Managers can only record for their assigned branch
-    if (req.userData.branch !== branch) {
-      return res.status(403).json({ error: 'You can only record procurement for your assigned branch' });
-    }
+    // Managers can add to any branch (no branch restriction)
+    // This allows managers to manage inventory across both branches
 
     // Create new Produce document with all details
     const produce = new Produce({
@@ -184,11 +181,8 @@ router.put('/:id', verifyToken, populateUser, onlyManagers, async (req, res) => 
       return res.status(404).json({ error: 'Produce not found' });
     }
 
-    // Verify manager's branch matches produce branch
-    // Branch-level access control
-    if (req.userData.branch !== produce.branch) {
-      return res.status(403).json({ error: 'You can only update produce from your assigned branch' });
-    }
+    // Managers can update any branch (no branch restriction)
+    // This allows managers to manage inventory across both branches
 
     // Update provided fields only (partial update)
     const { name, type, stock, cost, dealerName, contact, salePrice } = req.body;

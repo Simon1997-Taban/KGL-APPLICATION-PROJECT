@@ -61,6 +61,20 @@ const creditSaleSchema = new mongoose.Schema({
     minlength: [6, 'NIN must be at least 6 characters']
   },
 
+  // Buyer email for follow-up and invoicing
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    match: [/^[^@\s]+@[^@\s]+\.[^@\s]+$/, 'Email must be valid']
+  },
+
+  // Buyer nationality for KYC / reporting
+  nationality: {
+    type: String,
+    required: [true, 'Nationality is required'],
+    minlength: [2, 'Nationality must be at least 2 characters']
+  },
+
   // Buyer's delivery/billing address
   location: {
     type: String,

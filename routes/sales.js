@@ -24,6 +24,7 @@
 const express = require('express');
 const router = express.Router();
 const Sale = require('../models/Sale');
+const CreditSale = require('../models/CreditSale');
 const Produce = require('../models/Produce');
 const { verifyToken, populateUser, onlyManagersAndAgents } = require('../middleware/auth');
 const { validateSale } = require('../middleware/validators');
@@ -31,7 +32,12 @@ const { validateSale } = require('../middleware/validators');
 // Record a sale (Manager and Agent only)
 router.post('/', verifyToken, populateUser, onlyManagersAndAgents, validateSale, async (req, res) => {
   try {
-    const { produceName, tonnage, amountPaid, buyerName, branch } = req.body;
+    const { produceName, tonnage, buyerName, branch } = req.body;
+
+    // Enforce branch scope for managers/agents
+    if (req.user.role === 'agent' && branch !== req.userData.branch) {
+      return res.status(403).json({ error: 'You can only record sales for your assigned branch' });
+    }
 
     // Find the produce item
     const produce = await Produce.findOne({ name: produceName, branch });
@@ -47,12 +53,20 @@ router.post('/', verifyToken, populateUser, onlyManagersAndAgents, validateSale,
       });
     }
 
+    // Ensure manager-set sale price is used
+    if (!produce.salePrice) {
+      return res.status(400).json({ error: 'Sale price not set for this produce. Ask manager to set a price first.' });
+    }
+
+    // Always calculate amount using manager price
+    const calculatedAmount = (produce.salePrice || 0) * tonnage;
+
     // Create sale record
     const sale = new Sale({
       produce: produce._id,
       produceName,
       tonnage,
-      amountPaid,
+      amountPaid: calculatedAmount,
       buyerName,
       salesAgent: req.user.userId,
       salesAgentName: req.userData.name,
@@ -79,7 +93,7 @@ router.post('/', verifyToken, populateUser, onlyManagersAndAgents, validateSale,
 });
 
 // Get all sales (with optional filters)
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyToken, onlyManagersAndAgents, async (req, res) => {
   try {
     const { branch, saleType } = req.query;
     const query = {};
@@ -111,7 +125,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // Get sales by sales agent
-router.get('/agent/:agentId', verifyToken, async (req, res) => {
+router.get('/agent/:agentId', verifyToken, onlyManagersAndAgents, async (req, res) => {
   try {
     const { agentId } = req.params;
     const { branch } = req.query;
@@ -139,8 +153,56 @@ router.get('/agent/:agentId', verifyToken, async (req, res) => {
   }
 });
 
+// Combined customer purchase history (cash + credit)
+router.get('/customers', verifyToken, onlyManagersAndAgents, async (req, res) => {
+  try {
+    const { branch } = req.query;
+    const query = {};
+    if (branch && ['branch1', 'branch2'].includes(branch)) {
+      query.branch = branch;
+    }
+
+    const [sales, creditSales] = await Promise.all([
+      Sale.find(query).lean(),
+      CreditSale.find(query).lean()
+    ]);
+
+    const customers = [
+      ...sales.map(s => ({
+        buyerName: s.buyerName,
+        produceName: s.produceName,
+        tonnage: s.tonnage,
+        amount: s.amountPaid,
+        saleType: 'cash',
+        status: 'paid',
+        createdAt: s.createdAt,
+        branch: s.branch
+      })),
+      ...creditSales.map(cs => ({
+        buyerName: cs.buyerName,
+        produceName: cs.produceName,
+        tonnage: cs.tonnage,
+        amount: cs.amountDue,
+        saleType: 'credit',
+        status: cs.status,
+        dueDate: cs.dueDate,
+        nin: cs.nin,
+        contact: cs.contact,
+        createdAt: cs.createdAt,
+        branch: cs.branch
+      }))
+    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({ count: customers.length, customers });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get sale by ID
-router.get('/:id', verifyToken, async (req, res) => {
+// NOTE: Keep this route AFTER more specific paths like "/customers"
+// to avoid Express routing it as a dynamic :id match.
+router.get('/:id', verifyToken, onlyManagersAndAgents, async (req, res) => {
   try {
     const sale = await Sale.findById(req.params.id)
       .populate('produce')
