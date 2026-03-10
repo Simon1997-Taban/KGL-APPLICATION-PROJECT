@@ -26,7 +26,15 @@ const router = express.Router();
 const Sale = require('../models/Sale');
 const CreditSale = require('../models/CreditSale');
 const Produce = require('../models/Produce');
-const { verifyToken, populateUser, onlyManagersAndAgents } = require('../middleware/auth');
+const {
+  verifyToken,
+  populateUser,
+  onlyManagersAndAgents,
+  authorizeRole
+} = require('../middleware/auth');
+
+// Directors should be able to view sales data even if they don't record sales.
+const viewSalesRoles = authorizeRole(['manager', 'agent', 'director']);
 const { validateSale } = require('../middleware/validators');
 
 // Record a sale (Manager and Agent only)
@@ -93,7 +101,7 @@ router.post('/', verifyToken, populateUser, onlyManagersAndAgents, validateSale,
 });
 
 // Get all sales (with optional filters)
-router.get('/', verifyToken, onlyManagersAndAgents, async (req, res) => {
+router.get('/', verifyToken, viewSalesRoles, async (req, res) => {
   try {
     const { branch, saleType } = req.query;
     const query = {};
@@ -125,7 +133,7 @@ router.get('/', verifyToken, onlyManagersAndAgents, async (req, res) => {
 });
 
 // Get sales by sales agent
-router.get('/agent/:agentId', verifyToken, onlyManagersAndAgents, async (req, res) => {
+router.get('/agent/:agentId', verifyToken, viewSalesRoles, async (req, res) => {
   try {
     const { agentId } = req.params;
     const { branch } = req.query;
@@ -154,7 +162,7 @@ router.get('/agent/:agentId', verifyToken, onlyManagersAndAgents, async (req, re
 });
 
 // Combined customer purchase history (cash + credit)
-router.get('/customers', verifyToken, onlyManagersAndAgents, async (req, res) => {
+router.get('/customers', verifyToken, viewSalesRoles, async (req, res) => {
   try {
     const { branch } = req.query;
     const query = {};
@@ -204,7 +212,7 @@ router.get('/customers', verifyToken, onlyManagersAndAgents, async (req, res) =>
 // Get sale by ID
 // NOTE: Keep this route AFTER more specific paths like "/customers"
 // to avoid Express routing it as a dynamic :id match.
-router.get('/:id', verifyToken, onlyManagersAndAgents, async (req, res) => {
+router.get('/:id', verifyToken, viewSalesRoles, async (req, res) => {
   try {
     const sale = await Sale.findById(req.params.id)
       .populate('produce')

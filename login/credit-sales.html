@@ -167,6 +167,11 @@
   <script>
     const API_BASE = window.location.origin;
     const token = localStorage.getItem('token');
+    const fmtMoney = (val) => (val || 0).toLocaleString('en-UG', {
+      style: 'currency',
+      currency: 'UGX',
+      maximumFractionDigits: 0
+    });
     if (!token) window.location.href = '/login';
 
     let creditSales = [];
@@ -209,7 +214,7 @@
             </td>
             <td>${sale.produceName}</td>
             <td>${sale.tonnage}</td>
-            <td>${sale.amountDue.toFixed(2)}</td>
+            <td>${fmtMoney(sale.amountDue)}</td>
             <td>${dueDate}</td>
             <td><span class="badge ${sale.status}">${sale.status.toUpperCase()}</span></td>
             <td>

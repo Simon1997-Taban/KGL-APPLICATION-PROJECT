@@ -157,6 +157,11 @@
     const API_BASE = window.location.origin;
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
+    const fmtMoney = (val) => (val || 0).toLocaleString('en-UG', {
+      style: 'currency',
+      currency: 'UGX',
+      maximumFractionDigits: 0
+    });
     if (!token) window.location.href = '/login';
 
     // Hide branch filter for agents
@@ -217,7 +222,7 @@
             <td>${sale.buyerName}</td>
             <td>${sale.produceName}</td>
             <td>${sale.tonnage}</td>
-            <td>${sale.amount.toFixed(2)}</td>
+            <td>${fmtMoney(sale.amount)}</td>
             <td><span class="badge ${typeClass}">${sale.saleType.toUpperCase()}</span></td>
             <td>${branchName}</td>
             <td>${sale.salesAgentName || 'N/A'}</td>
@@ -261,7 +266,7 @@
           <div class="row"><span>Quantity:</span><span>${sale.tonnage} units</span></div>
           <div class="row"><span>Type:</span><span>${sale.saleType.toUpperCase()}</span></div>
           <div class="line"></div>
-          <div class="row total"><span>TOTAL:</span><span>UGX ${sale.amount.toFixed(2)}</span></div>
+          <div class="row total"><span>TOTAL:</span><span>${fmtMoney(sale.amount)}</span></div>
           ${sale.status ? `<div class="row"><span>Status:</span><span>${sale.status.toUpperCase()}</span></div>` : ''}
           ${sale.dueDate ? `<div class="row"><span>Due Date:</span><span>${new Date(sale.dueDate).toLocaleDateString()}</span></div>` : ''}
           <div class="line"></div>

@@ -560,9 +560,10 @@
         });
 
         const fmtMoney = (val) =>
-          (val || 0).toLocaleString(undefined, {
+          (val || 0).toLocaleString("en-UG", {
             style: "currency",
-            currency: "Ugx",
+            currency: "UGX",
+            maximumFractionDigits: 0,
           });
         const safeList = (arr) => (Array.isArray(arr) ? arr : []);
 
