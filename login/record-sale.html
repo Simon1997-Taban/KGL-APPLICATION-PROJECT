@@ -375,19 +375,19 @@
           })
         });
 
-        const data = await res.json();
+        const data = await res.json(); // parse once
         if (res.ok) {
           showAlert('Cash sale recorded successfully!', 'success');
-          const saleData = await res.json();
           if (confirm('Sale recorded! Print receipt?')) {
+            const sale = data.sale || {};
             printReceipt({
-              buyerName: document.getElementById('cashBuyer').value,
-              produceName: selectedCashProduct.name,
-              tonnage: parseFloat(document.getElementById('cashQuantity').value),
-              amount: parseFloat(document.getElementById('cashAmount').value),
+              buyerName: sale.buyerName || document.getElementById('cashBuyer').value,
+              produceName: sale.produceName || selectedCashProduct.name,
+              tonnage: sale.tonnage || parseFloat(document.getElementById('cashQuantity').value),
+              amount: sale.amountPaid || parseFloat(document.getElementById('cashAmount').value),
               saleType: 'cash',
-              branch: document.getElementById('cashBranch').value,
-              createdAt: new Date()
+              branch: sale.branch || document.getElementById('cashBranch').value,
+              createdAt: sale.createdAt || new Date()
             });
           }
           e.target.reset();
@@ -433,23 +433,23 @@
           })
         });
 
-        const data = await res.json();
+        const data = await res.json(); // parse once
         if (res.ok) {
           showAlert('Credit sale recorded successfully!', 'success');
-          const saleData = await res.json();
           if (confirm('Credit sale recorded! Print receipt?')) {
+            const sale = data.creditSale || {};
             printReceipt({
-              buyerName: document.getElementById('creditBuyer').value,
-              produceName: selectedCreditProduct.name,
-              tonnage: parseFloat(document.getElementById('creditQuantity').value),
-              amount: parseFloat(document.getElementById('creditAmount').value),
+              buyerName: sale.buyerName || document.getElementById('creditBuyer').value,
+              produceName: sale.produceName || selectedCreditProduct.name,
+              tonnage: sale.tonnage || parseFloat(document.getElementById('creditQuantity').value),
+              amount: sale.amountDue || parseFloat(document.getElementById('creditAmount').value),
               saleType: 'credit',
-              branch: document.getElementById('creditBranch').value,
-              contact: document.getElementById('creditPhone').value,
-              nin: document.getElementById('creditNin').value,
-              dueDate: document.getElementById('creditReturn').value,
-              status: 'pending',
-              createdAt: new Date()
+              branch: sale.branch || document.getElementById('creditBranch').value,
+              contact: sale.contact || document.getElementById('creditPhone').value,
+              nin: sale.nin || document.getElementById('creditNin').value,
+              dueDate: sale.dueDate || document.getElementById('creditReturn').value,
+              status: sale.status || 'pending',
+              createdAt: sale.createdAt || new Date()
             });
           }
           e.target.reset();
