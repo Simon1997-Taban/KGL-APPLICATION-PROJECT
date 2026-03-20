@@ -1,320 +1,768 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Register</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:3000; img-src 'self' data:;">
+    <title>KGL - Register</title>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      }
-      .form-box {
-        width: 400px;
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      }
-      .form-box h2 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 30px;
-        font-size: 1.8rem;
-      }
-      input,
-      select {
-        width: 100%;
-        padding: 12px;
-        margin: 10px 0;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        box-sizing: border-box;
-        font-size: 1rem;
-      }
-      input:focus,
-      select:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 5px rgba(102, 126, 234, 0.4);
-      }
-      button {
-        width: 100%;
-        padding: 12px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: bold;
-        margin-top: 15px;
-        transition: transform 0.2s;
-      }
-      button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-      }
-      .link-container {
-        text-align: center;
-        margin-top: 20px;
-      }
-      .link-container p {
-        margin: 0;
-        color: #666;
-      }
-      .link-container a {
-        text-decoration: none;
-        color: #667eea;
-        font-weight: bold;
-        transition: color 0.2s;
-      }
-      .link-container a:hover {
-        color: #764ba2;
-      }
-      .error {
-        color: #d32f2f;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        display: none;
-      }
-      .success {
-        color: #2e7d32;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        display: none;
-      }
-      .loading {
-        display: none;
-        text-align: center;
-        color: #667eea;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="form-box">
-      <h1>Don't have An Account</h1>
-      <h2>REGISTER HERE </h2>
-      <form id="registerForm">
-        <input
-          type="text"
-          name="name"
-          id="name"
-          placeholder="Enter your name"
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          id="email"
-          placeholder="Enter your email"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          id="password"
-          placeholder="Enter your password"
-          required
-        />
-        <input
-          type="password"
-          name="confirmPassword"
-          id="confirmPassword"
-          placeholder="Confirm your password"
-          required
-        />
-        <select name="role" id="role" required>
-          <option value="">Select your role</option>
-          <option value="manager">Manager</option>
-          <option value="procurement">Procurement Officer</option>
-          <option value="agent">Sales Agent</option>
-          <option value="director">Director</option>
-        </select>
-        <select name="branch" id="branch" required>
-          <option value="">Select your branch</option>
-          <option value="branch1">Matugga</option>
-          <option value="branch2">Maganjo</option>
-        </select>
-        <input
-          type="tel"
-          name="contact"
-          id="contact"
-          placeholder="Enter your phone number (10-12 digits)"
-          pattern="[0-9]{10,15}"
-          required
-        />
-        <label
-          for="photo"
-          style="
-            margin-top: 8px;
+        :root {
+            --bg-1: #07111f;
+            --bg-2: #101a2d;
+            --line: rgba(120, 147, 187, 0.18);
+            --text: #ecf7ff;
+            --muted: #98abc6;
+            --cyan: #41e4de;
+            --pink: #ff4f88;
+            --cyan-soft: rgba(65, 228, 222, 0.28);
+            --pink-soft: rgba(255, 79, 136, 0.22);
+            --danger: #ff8aa8;
+            --success: #69f1c5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            color-scheme: dark;
+        }
+
+        body {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            overflow-x: hidden;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(65, 228, 222, 0.12), transparent 28%),
+                radial-gradient(circle at 80% 15%, rgba(255, 79, 136, 0.12), transparent 24%),
+                radial-gradient(circle at 70% 80%, rgba(246, 193, 119, 0.08), transparent 30%),
+                linear-gradient(160deg, var(--bg-1), var(--bg-2));
+            color: var(--text);
+            font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            filter: blur(72px);
+            opacity: 0.38;
+            pointer-events: none;
+        }
+
+        body::before {
+            top: -80px;
+            left: -60px;
+            background: var(--cyan-soft);
+        }
+
+        body::after {
+            right: -120px;
+            bottom: -80px;
+            background: var(--pink-soft);
+        }
+
+        .auth-shell {
+            position: relative;
+            width: min(100%, 1160px);
+            min-height: 680px;
+            display: grid;
+            grid-template-columns: minmax(280px, 1fr) minmax(360px, 560px);
+            align-items: center;
+            gap: 36px;
+            padding: 32px;
+            border-radius: 34px;
+            background: rgba(7, 17, 31, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow:
+                0 30px 80px rgba(2, 7, 18, 0.58),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(18px);
+        }
+
+        .auth-shell::before,
+        .auth-shell::after {
+            content: "";
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            pointer-events: none;
+        }
+
+        .auth-shell::before {
+            top: 18px;
+            left: 18px;
+            border-top: 2px solid var(--cyan);
+            border-left: 2px solid var(--cyan);
+            border-radius: 20px 0 0 0;
+            filter: drop-shadow(0 0 12px rgba(65, 228, 222, 0.4));
+        }
+
+        .auth-shell::after {
+            bottom: 18px;
+            right: 18px;
+            border-bottom: 2px solid var(--pink);
+            border-right: 2px solid var(--pink);
+            border-radius: 0 0 20px 0;
+            filter: drop-shadow(0 0 12px rgba(255, 79, 136, 0.4));
+        }
+
+        .stage-copy {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 450px;
+        }
+
+        .stage-copy span {
+            font-size: 12px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .stage-copy h1 {
+            font-size: clamp(28px, 4vw, 38px);
+            line-height: 1.06;
+        }
+
+        .stage-copy p {
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 15px;
+            max-width: 36ch;
+        }
+
+        .benefits {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .benefit {
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .benefit strong {
             display: block;
-            font-weight: normal;
-            color: #333;
-          "
-          >Profile Photo (optional)</label
-        >
-        <input type="file" id="photo" name="photo" accept="image/*" />
-        <div class="error" id="errorMessage"></div>
-        <div class="success" id="successMessage"></div>
-        <div class="loading" id="loading">Registering...</div>
-        <button type="submit">Register Now</button>
-      </form>
-      <div class="link-container">
-        <p>Already have an account? <a href="/login">Login now</a></p>
-      </div>
-    </div>
+            margin-bottom: 6px;
+        }
+
+        .benefit p {
+            font-size: 14px;
+            max-width: none;
+        }
+
+        .portal-card {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-height: 88vh;
+            border-radius: 24px;
+            background: linear-gradient(180deg, rgba(22, 30, 48, 0.98), rgba(14, 20, 34, 0.99));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow:
+                0 24px 50px rgba(3, 9, 20, 0.65),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+        }
+
+        .portal-card::before {
+            display: none;
+        }
+
+        .card-scroll {
+            position: relative;
+            z-index: 1;
+            padding: 36px 32px 32px;
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+
+        .brand-copy {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .brand-copy h2 {
+            font-size: 22px;
+            letter-spacing: 0.26em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .brand-copy p {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .error,
+        .success {
+            display: none;
+            padding: 12px 14px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .error {
+            border: 1px solid rgba(255, 138, 168, 0.35);
+            background: rgba(255, 79, 136, 0.1);
+            color: var(--danger);
+        }
+
+        .success {
+            border: 1px solid rgba(105, 241, 197, 0.3);
+            background: rgba(105, 241, 197, 0.1);
+            color: var(--success);
+        }
+
+        .register-form {
+            display: grid;
+            gap: 16px;
+        }
+
+        .form-section {
+            padding: 18px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section-title {
+            font-size: 15px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            font-size: 12px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid rgba(228, 239, 255, 0.16);
+            background: rgba(7, 11, 19, 0.58);
+            color: var(--text);
+            border-radius: 18px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: rgba(65, 228, 222, 0.72);
+            box-shadow: 0 0 0 4px rgba(65, 228, 222, 0.14);
+            transform: translateY(-1px);
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .help-text {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .photo-upload {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .photo-preview {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(65, 228, 222, 0.4);
+            background: rgba(7, 11, 19, 0.6);
+            flex-shrink: 0;
+        }
+
+        .photo-label {
+            display: inline-block;
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(65, 228, 222, 0.35);
+            background: rgba(65, 228, 222, 0.08);
+            color: var(--cyan);
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+            letter-spacing: 0.06em;
+        }
+
+        .photo-label:hover {
+            background: rgba(65, 228, 222, 0.16);
+            border-color: rgba(65, 228, 222, 0.6);
+        }
+
+        #profilePhoto {
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .service-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .service-tag {
+            padding: 9px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--muted);
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+            user-select: none;
+        }
+
+        .service-tag:hover,
+        .service-tag.selected {
+            transform: translateY(-1px);
+            border-color: rgba(65, 228, 222, 0.45);
+            background: rgba(65, 228, 222, 0.12);
+            color: var(--text);
+        }
+
+        .checkbox-stack {
+            display: grid;
+            gap: 12px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: var(--cyan);
+        }
+
+        .checkbox-group label {
+            letter-spacing: normal;
+            text-transform: none;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .submit-button {
+            border: 0;
+            border-radius: 999px;
+            padding: 15px 20px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #06131d;
+            background: linear-gradient(135deg, #41e4de, #69f1c5);
+            cursor: pointer;
+            box-shadow: 0 16px 32px rgba(65, 228, 222, 0.28);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 22px 34px rgba(65, 228, 222, 0.34);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.7;
+            cursor: wait;
+            transform: none;
+        }
+
+        .footer-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: var(--muted);
+            padding-top: 4px;
+        }
+
+        .footer-row a {
+            color: var(--pink);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .footer-row a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid rgba(6, 19, 29, 0.24);
+            border-top-color: #06131d;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 940px) {
+            .auth-shell {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                gap: 22px;
+            }
+
+            .stage-copy {
+                text-align: center;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 620px) {
+            body {
+                padding: 14px;
+            }
+
+            .auth-shell {
+                padding: 20px;
+            }
+
+            .card-scroll {
+                padding: 32px 20px 24px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="auth-shell">
+        <div class="stage-copy">
+            <span>KGL</span>
+            <h1>Join our agricultural marketplace today.</h1>
+            <p>Create your account to access our comprehensive produce management system. Whether you're a manager, director, or sales agent, get started with our platform.</p>
+
+            <div class="benefits">
+                <div class="benefit">
+                    <strong>For Directors & Managers</strong>
+                    <p>Oversee operations across all branches with comprehensive reporting and management tools.</p>
+                </div>
+                <div class="benefit">
+                    <strong>For Sales Agents</strong>
+                    <p>Manage sales, customers, and inventory for your specific branch location.</p>
+                </div>
+            </div>
+        </div>
+
+        <section class="portal-card">
+            <div class="card-scroll">
+                <div class="brand-copy">
+                    <h2>CREATE ACCOUNT</h2>
+                    <p>Join KGL today. Fill in your details below to get started with our agricultural management platform.</p>
+                </div>
+
+                <div id="errorMessage" class="error"></div>
+                <div id="successMessage" class="success"></div>
+
+                <form id="registerForm" class="register-form">
+                    <div class="form-section">
+                        <div class="section-title">Basic Information</div>
+
+                        <div class="form-group">
+                            <label>Profile Photo</label>
+                            <div class="photo-upload">
+                                <img id="photoPreview" class="photo-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='26' r='12' fill='%2398abc6'/%3E%3Cellipse cx='32' cy='52' rx='20' ry='12' fill='%2398abc6'/%3E%3C/svg%3E" alt="Preview">
+                                <div>
+                                    <label class="photo-label" for="profilePhoto">Choose Photo</label>
+                                    <input type="file" id="profilePhoto" accept="image/*">
+                                    <div class="help-text" style="margin-top:6px">JPG, PNG or GIF. Required.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="name">Full Name</label>
+                                <input type="text" id="name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" required>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" required minlength="6">
+                                <div class="help-text">Minimum 6 characters.</div>
+                            </div>
+
+                            <div class="form-group" id="branchGroup" style="display: none;">
+                                <label for="branch">Branch Location</label>
+                                <input type="text" id="branch" placeholder="Enter your branch name">
+                                <div class="help-text">Specify which branch you'll be working at.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">Account Type</div>
+
+                        <div class="form-group">
+                            <label for="role">Role</label>
+                            <select id="role" required>
+                                <option value="">Select your role...</option>
+                                <option value="director">Director</option>
+                                <option value="manager">Manager</option>
+                                <option value="agent">Sales Agent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">Terms & Conditions</div>
+
+                        <div class="checkbox-stack">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="agreeTerms" required>
+                                <label for="agreeTerms">I agree to the Terms of Service and Privacy Policy.</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-button" id="registerBtn">
+                        <span id="btnText">Create Account</span>
+                        <span id="btnLoading" class="loading" style="display: none;"></span>
+                    </button>
+                </form>
+
+                <div class="footer-row">
+                    <span>Already have an account?</span>
+                    <a href="/login">Sign in here</a>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <script>
-      const form = document.getElementById("registerForm");
-      const errorMessage = document.getElementById("errorMessage");
-      const successMessage = document.getElementById("successMessage");
-      const loading = document.getElementById("loading");
+        const API_BASE = 'http://localhost:3000';
+        const registerForm = document.getElementById('registerForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const registerBtn = document.getElementById('registerBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoading = document.getElementById('btnLoading');
+        let profileImageBase64 = '';
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+        document.getElementById('profilePhoto').addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                profileImageBase64 = e.target.result;
+                document.getElementById('photoPreview').src = profileImageBase64;
+            };
+            reader.readAsDataURL(file);
+        });
 
-        const name = document.getElementById("name").value;
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-        const confirmPassword =
-          document.getElementById("confirmPassword").value;
-        const role = document.getElementById("role").value;
-        const branch = document.getElementById("branch").value;
-        const contact = document.getElementById("contact").value;
-
-        // Clear previous messages
-        errorMessage.style.display = "none";
-        successMessage.style.display = "none";
-
-        // Validate passwords match
-        if (password !== confirmPassword) {
-          errorMessage.style.display = "block";
-          errorMessage.textContent = "Passwords do not match";
-          return;
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
         }
 
-        // Validate password length
-        if (password.length < 6) {
-          errorMessage.style.display = "block";
-          errorMessage.textContent = "Password must be at least 6 characters";
-          return;
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
         }
 
-        loading.style.display = "block";
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
 
-        try {
-          console.log(
-            "Attempting registration with email:",
-            email,
-            "role:",
-            role,
-          );
+        function setLoading(loading) {
+            registerBtn.disabled = loading;
+            btnText.style.display = loading ? 'none' : 'inline';
+            btnLoading.style.display = loading ? 'inline-block' : 'none';
+        }
 
-          // Build FormData for multipart upload
-          const formData = new FormData();
-          formData.append("name", name);
-          formData.append("email", email);
-          formData.append("password", password);
-          formData.append("confirmPassword", confirmPassword);
-          formData.append("role", role);
-          formData.append("branch", branch);
-          formData.append("contact", contact);
-          const photoInput = document.getElementById("photo");
-          if (photoInput && photoInput.files && photoInput.files[0]) {
-            formData.append("photo", photoInput.files[0]);
-          }
-
-          const response = await fetch(
-            "http://localhost:3000/api/auth/register",
-            {
-              method: "POST",
-              body: formData,
-            },
-          );
-
-          loading.style.display = "none";
-
-          console.log("Register response status:", response.status);
-
-          // Check if response is ok
-          if (!response.ok) {
-            let errorText = "Registration failed";
-            try {
-              const data = await response.json();
-              errorText = data.error || "Registration failed";
-            } catch (e) {
-              // If response is not JSON, use default error
-              errorText = `Server error: ${response.status} ${response.statusText}`;
+        // Handle role change to show/hide branch field
+        document.getElementById('role').addEventListener('change', function() {
+            const role = this.value;
+            const branchGroup = document.getElementById('branchGroup');
+            const branchInput = document.getElementById('branch');
+            
+            if (role === 'agent') {
+                // Show branch field for Sales Agents
+                branchGroup.style.display = 'block';
+                branchInput.required = true;
+            } else {
+                // Hide branch field for Directors and Managers
+                branchGroup.style.display = 'none';
+                branchInput.required = false;
+                branchInput.value = ''; // Clear the value when hidden
             }
-            throw new Error(errorText);
-          }
+        });
 
-          // Parse response as JSON
-          let data;
-          try {
-            data = await response.json();
-          } catch (e) {
-            throw new Error("Server returned invalid response");
-          }
+        // Initialize the form - ensure branch is hidden by default
+        document.addEventListener('DOMContentLoaded', function() {
+            const branchGroup = document.getElementById('branchGroup');
+            const branchInput = document.getElementById('branch');
+            branchGroup.style.display = 'none';
+            branchInput.required = false;
+        });
 
-          console.log("Registration successful, response:", data);
-          console.log("Role from response:", data.role);
+        registerForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            hideMessages();
+            setLoading(true);
 
-          // Store token in localStorage
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("role", data.role);
-          localStorage.setItem("userId", data.userId);
-          localStorage.setItem("userName", data.name);
-          if (data.photo) {
-            localStorage.setItem("userPhoto", data.photo);
-          }
+            const role = document.getElementById('role').value;
 
-          console.log(
-            "Stored in localStorage - role:",
-            localStorage.getItem("role"),
-            "name:",
-            localStorage.getItem("userName"),
-          );
+            if (!profileImageBase64) {
+                showError('Please upload a profile photo.');
+                setLoading(false);
+                return;
+            }
 
-          successMessage.style.display = "block";
-          successMessage.textContent =
-            "Registration successful! Redirecting to dashboard...";
+            // Validate branch for sales agents
+            if (role === 'agent') {
+                const branch = document.getElementById('branch').value.trim();
+                if (!branch) {
+                    showError('Branch location is required for Sales Agents.');
+                    setLoading(false);
+                    return;
+                }
+            }
 
-          // Clear form
-          form.reset();
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                phone: document.getElementById('phone').value,
+                role: role,
+                photo: profileImageBase64
+            };
 
-          // Redirect based on role
-          const roleRoutes = {
-            manager: "http://localhost:3000/manager-dashboard",
-            director: "http://localhost:3000/director-dashboard",
-            procurement: "http://localhost:3000/procurement-dashboard",
-            agent: "http://localhost:3000/agent-dashboard",
-          };
+            // Only include branch for sales agents
+            if (role === 'agent') {
+                formData.branch = document.getElementById('branch').value;
+            }
 
-          const redirectUrl =
-            roleRoutes[data.role] || "http://localhost:3000/manager-dashboard";
-          console.log("Redirecting to:", redirectUrl, "with role:", data.role);
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
 
-          // Redirect immediately
-          setTimeout(() => {
-            console.log("Now redirecting to:", redirectUrl);
-            window.location.href = redirectUrl;
-          }, 500);
-        } catch (error) {
-          loading.style.display = "none";
-          errorMessage.style.display = "block";
-          errorMessage.textContent = error.message;
-          console.error("Registration error:", error);
-          console.error("Error stack:", error.stack);
+                const result = await response.json();
+
+                if (response.ok) {
+                    showSuccess('Account created successfully! Redirecting...');
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('role', result.role);
+                    localStorage.setItem('userId', result.userId);
+                    localStorage.setItem('userName', result.name);
+                    if (result.branch) {
+                        localStorage.setItem('branch', result.branch);
+                    }
+                    if (result.photo) {
+                        localStorage.setItem('userPhoto', result.photo);
+                    }
+
+                    setTimeout(() => {
+                        const redirectUrl = `${API_BASE}/dashboard?role=${encodeURIComponent(result.role)}`;
+                        window.location.href = redirectUrl;
+                    }, 1500);
+                } else {
+                    showError(result.message || result.error || 'Registration failed');
+                }
+            } catch (error) {
+                showError('Network error. Please check your connection and try again.');
+                console.error('Registration error:', error);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        if (localStorage.getItem('token')) {
+            const role = localStorage.getItem('role');
+            if (role) {
+                const redirectUrl = `${API_BASE}/dashboard?role=${encodeURIComponent(role)}`;
+                window.location.href = redirectUrl;
+            }
         }
-      });
     </script>
-  </body>
+</body>
 </html>
