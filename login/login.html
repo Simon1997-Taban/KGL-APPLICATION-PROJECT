@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://localhost:3000; img-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: http://localhost:3000; img-src 'self' data: blob:;">
     <title>KGL - Login</title>
     <style>
         :root {
@@ -495,7 +495,7 @@
     </main>
 
     <script>
-        const API_BASE = 'http://localhost:3000';
+        const API_BASE = window.location.origin;
         const authShell = document.getElementById('authShell');
         const launchLogin = document.getElementById('launchLogin');
         const closeLogin = document.getElementById('closeLogin');
@@ -507,9 +507,7 @@
         const emailInput = document.getElementById('email');
 
         function redirectToDashboard(data) {
-            const redirectUrl = `${API_BASE}/dashboard?role=${encodeURIComponent(data.role)}`;
-            console.log('Redirecting to:', redirectUrl, 'with role:', data.role);
-            window.location.href = redirectUrl;
+            window.location.href = `/dashboard?role=${encodeURIComponent(data.role)}`;
         }
 
         function openLoginCard() {
@@ -600,9 +598,7 @@
 
         if (localStorage.getItem('token')) {
             const role = localStorage.getItem('role');
-            if (role) {
-                redirectToDashboard({ role });
-            }
+            if (role) window.location.href = `/dashboard?role=${encodeURIComponent(role)}`;
         }
     </script>
 </body>
