@@ -573,8 +573,12 @@
 
                         <div class="form-group" id="branchGroup" style="display: block;">
                             <label for="branch">Branch Location</label>
-                            <input type="text" id="branch" required placeholder="Enter branch1 or branch2">
-                            <div class="help-text">Specify the branch assigned (branch1 or branch2).</div>
+                            <select id="branch" required>
+                                <option value="">Select branch...</option>
+                                <option value="branch1">Matugga</option>
+                                <option value="branch2">Maganjo</option>
+                            </select>
+                            <div class="help-text">Select the branch location (Matugga or Maganjo).</div>
                         </div>
                     </div>
 
