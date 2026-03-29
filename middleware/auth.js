@@ -36,7 +36,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
  */
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   // Extract token from "Bearer <token>" format in Authorization header
   const token = req.headers.authorization?.split(' ')[1];
 
