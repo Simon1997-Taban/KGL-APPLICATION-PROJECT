@@ -16,6 +16,22 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Test email connection on startup
+if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ SMTP Connection Failed on startup:');
+      console.error('   Error:', error.message);
+      console.error('   This means emails will NOT be deliverable');
+      console.error('   Check: SMTP_USER, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT in .env');
+    } else {
+      console.log('✅ SMTP Connection Successful - Ready to send emails');
+    }
+  });
+} else {
+  console.warn('⚠️  SMTP credentials not configured. Email delivery disabled.');
+}
+
 /**
  * Send OTP verification email
  * @param {string} userEmail - Recipient's email address
@@ -79,10 +95,14 @@ async function sendOTPEmail(userEmail, userName, otpCode) {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('OTP email sent successfully:', info.response);
+    console.log('✅ OTP email sent successfully:', info.response);
     return true;
   } catch (error) {
-    console.error('Error sending OTP email:', error.message);
+    console.error('❌ Error sending OTP email:');
+    console.error('   Message:', error.message);
+    console.error('   Code:', error.code);
+    console.error('   Response:', error.response);
+    console.error('   Full Error:', error);
     return false;
   }
 }
