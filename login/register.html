@@ -548,8 +548,8 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="phone">Phone Number</label>
-                                <input type="tel" id="phone" required>
+                                <label for="contact">Phone Number</label>
+                                <input type="tel" id="contact" required pattern="[0-9]{10,15}" placeholder="Digits only">
                             </div>
                         </div>
 
@@ -565,11 +565,16 @@
                                 <div class="help-text">Minimum 6 characters.</div>
                             </div>
 
-                            <div class="form-group" id="branchGroup" style="display: none;">
-                                <label for="branch">Branch Location</label>
-                                <input type="text" id="branch" placeholder="Enter your branch name">
-                                <div class="help-text">Specify which branch you'll be working at.</div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password</label>
+                                <input type="password" id="confirmPassword" required minlength="6">
                             </div>
+                        </div>
+
+                        <div class="form-group" id="branchGroup" style="display: block;">
+                            <label for="branch">Branch Location</label>
+                            <input type="text" id="branch" required placeholder="Enter branch1 or branch2">
+                            <div class="help-text">Specify the branch assigned (branch1 or branch2).</div>
                         </div>
                     </div>
 
@@ -609,18 +614,43 @@
                     <a href="/login">Sign in here</a>
                 </div>
             </div>
+
+            <!-- Verification Modal -->
+            <div id="verificationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+                <div style="background: white; padding: 40px; border-radius: 10px; text-align: center; max-width: 400px; box-shadow: 0 5px 25px rgba(0,0,0,0.3);">
+                    <h2 style="color: #2c3e50; margin-bottom: 10px;">Verify Your Email</h2>
+                    <p style="color: #7f8c8d; margin-bottom: 20px;">We've sent a verification code to your email. Enter it below to verify your account.</p>
+                    
+                    <input type="text" id="otpInput" placeholder="Enter 6-digit code" maxlength="6" style="width: 100%; padding: 12px; font-size: 24px; text-align: center; letter-spacing: 10px; border: 2px solid #ecf0f1; border-radius: 5px; margin-bottom: 20px;" required>
+                    
+                    <div id="verifyError" style="color: #e74c3c; display: none; margin-bottom: 15px; font-size: 14px;"></div>
+                    
+                    <button id="verifyBtn" style="width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px;">Verify Code</button>
+                    
+                    <button id="resendBtn" style="width: 100%; padding: 12px; background: #95a5a6; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 10px;">Resend Code</button>
+                    
+                    <p style="color: #7f8c8d; font-size: 12px; margin-top: 15px;">Didn't receive the code? Check your spam folder or click "Resend Code".</p>
+                </div>
+            </div>
         </section>
     </main>
 
     <script>
         const API_BASE = window.location.origin;
         const registerForm = document.getElementById('registerForm');
+        const verificationModal = document.getElementById('verificationModal');
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
         const registerBtn = document.getElementById('registerBtn');
         const btnText = document.getElementById('btnText');
         const btnLoading = document.getElementById('btnLoading');
+        const otpInput = document.getElementById('otpInput');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const resendBtn = document.getElementById('resendBtn');
+        const verifyError = document.getElementById('verifyError');
         let profileImageBase64 = '';
+        let registrationEmail = '';
+        let registrationPassword = '';
 
         document.getElementById('profilePhoto').addEventListener('change', function () {
             const file = this.files[0];
@@ -656,30 +686,103 @@
             btnLoading.style.display = loading ? 'inline-block' : 'none';
         }
 
-        // Handle role change to show/hide branch field
+        // Handle role change: always display branch field since backend requires branch for registration
         document.getElementById('role').addEventListener('change', function() {
-            const role = this.value;
-            const branchGroup = document.getElementById('branchGroup');
             const branchInput = document.getElementById('branch');
-            
-            if (role === 'agent') {
-                // Show branch field for Sales Agents
-                branchGroup.style.display = 'block';
-                branchInput.required = true;
-            } else {
-                // Hide branch field for Directors and Managers
-                branchGroup.style.display = 'none';
-                branchInput.required = false;
-                branchInput.value = ''; // Clear the value when hidden
-            }
+            branchInput.required = true;
         });
 
-        // Initialize the form - ensure branch is hidden by default
+        // Initialize the form - make branch always available
         document.addEventListener('DOMContentLoaded', function() {
             const branchGroup = document.getElementById('branchGroup');
             const branchInput = document.getElementById('branch');
-            branchGroup.style.display = 'none';
-            branchInput.required = false;
+            branchGroup.style.display = 'block';
+            branchInput.required = true;
+        });
+
+        // Handle verification code input - only allow digits
+        otpInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Verify button click
+        verifyBtn.addEventListener('click', async function() {
+            const code = otpInput.value.trim();
+            if (!code || code.length !== 6) {
+                verifyError.textContent = 'Please enter a valid 6-digit code.';
+                verifyError.style.display = 'block';
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyError.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: registrationEmail, code: code })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    verificationModal.style.display = 'none';
+                    showSuccess('✓ Account verified! You can now log in. Redirecting to login...');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    verifyError.textContent = result.error || 'Verification failed. Please try again.';
+                    verifyError.style.display = 'block';
+                }
+            } catch (error) {
+                verifyError.textContent = 'Network error. Please try again.';
+                verifyError.style.display = 'block';
+                console.error('Verification error:', error);
+            } finally {
+                verifyBtn.disabled = false;
+            }
+        });
+
+        // Resend OTP button
+        resendBtn.addEventListener('click', async function() {
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Sending...';
+            verifyError.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/send-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: registrationEmail })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    verifyError.textContent = 'New code sent to your email!';
+                    verifyError.style.display = 'block';
+                    verifyError.style.color = '#27ae60';
+                    otpInput.value = '';
+                    otpInput.focus();
+                } else {
+                    verifyError.textContent = result.error || 'Failed to resend code.';
+                    verifyError.style.display = 'block';
+                    verifyError.style.color = '#e74c3c';
+                }
+            } catch (error) {
+                verifyError.textContent = 'Network error. Please try again.';
+                verifyError.style.display = 'block';
+                verifyError.style.color = '#e74c3c';
+                console.error('Resend OTP error:', error);
+            } finally {
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Resend Code';
+                setTimeout(() => {
+                    verifyError.style.display = 'none';
+                }, 5000);
+            }
         });
 
         registerForm.addEventListener('submit', async function (e) {
@@ -709,14 +812,33 @@
                 name: document.getElementById('name').value,
                 email: document.getElementById('email').value,
                 password: document.getElementById('password').value,
-                phone: document.getElementById('phone').value,
+                confirmPassword: document.getElementById('confirmPassword').value,
+                contact: document.getElementById('contact').value,
                 role: role,
+                branch: document.getElementById('branch').value,
                 photo: profileImageBase64
             };
 
-            // Only include branch for sales agents
-            if (role === 'agent') {
-                formData.branch = document.getElementById('branch').value;
+            // Client-side validation for email and phone format
+            const simpleEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const phoneRegex = /^[0-9]{10,15}$/;
+
+            if (!simpleEmailRegex.test(formData.email)) {
+                showError('Please enter a valid email address.');
+                setLoading(false);
+                return;
+            }
+
+            if (!phoneRegex.test(formData.contact)) {
+                showError('Please enter a valid phone number (10-15 digits).');
+                setLoading(false);
+                return;
+            }
+
+            if (formData.password !== formData.confirmPassword) {
+                showError('Passwords do not match.');
+                setLoading(false);
+                return;
             }
 
             try {
@@ -729,21 +851,15 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showSuccess('Account created successfully! Redirecting...');
-                    localStorage.setItem('token', result.token);
-                    localStorage.setItem('role', result.role);
-                    localStorage.setItem('userId', result.userId);
-                    localStorage.setItem('userName', result.name);
-                    if (result.branch) {
-                        localStorage.setItem('branch', result.branch);
-                    }
-                    if (result.photo) {
-                        localStorage.setItem('userPhoto', result.photo);
-                    }
+                    // Store registration data temporarily for verification
+                    registrationEmail = formData.email;
+                    registrationPassword = formData.password;
 
-                    setTimeout(() => {
-                        window.location.href = `/dashboard?role=${encodeURIComponent(result.role)}`;
-                    }, 1500);
+                    // Show verification modal instead of immediate redirect
+                    showSuccess('Account created! Please verify your email to continue.');
+                    registerForm.style.display = 'none';
+                    verificationModal.style.display = 'flex';
+                    otpInput.focus();
                 } else {
                     showError(result.message || result.error || 'Registration failed');
                 }

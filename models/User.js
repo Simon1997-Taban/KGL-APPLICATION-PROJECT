@@ -73,6 +73,17 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Branch assignment is required']
   },
 
+  // Email/phone verification status (can be enhanced with OTP via email/sms)
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+
+  verificationCode: {
+    type: String,
+    default: null
+  },
+
   // Contact phone number for reaching user
   contact: {
     type: String,

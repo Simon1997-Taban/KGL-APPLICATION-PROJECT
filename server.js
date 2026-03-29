@@ -35,6 +35,33 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Simple in-memory rate limiting for auth-related endpoints (protects against brute force attempts)
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 60 seconds
+const RATE_LIMIT_MAX = 30; // max 30 requests per window per IP
+
+const authRateLimiter = (req, res, next) => {
+  const key = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const now = Date.now();
+
+  if (!rateLimitStore.has(key)) {
+    rateLimitStore.set(key, []);
+  }
+
+  const timestamps = rateLimitStore.get(key).filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+  timestamps.push(now);
+
+  rateLimitStore.set(key, timestamps);
+
+  if (timestamps.length > RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: 'Too many requests; please wait and try again.' });
+  }
+
+  next();
+};
+
+app.use('/api/auth', authRateLimiter);
+
 // Add debug logging for requests
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -127,8 +154,10 @@ app.listen(PORT, () => {
   console.log(`\n✅ Server running on http://localhost:${PORT}`);
   console.log('\n📚 API Endpoints:');
   console.log('\n🔐 Authentication:');
-  console.log('  POST   /api/auth/register          - Register new user');
-  console.log('  POST   /api/auth/login             - Login user');
+  console.log('  POST   /api/auth/register          - Register new user (sends OTP to email)');
+  console.log('  POST   /api/auth/login             - Login user (requires verified account)');
+  console.log('  POST   /api/auth/verify            - Verify account with OTP code');
+  console.log('  POST   /api/auth/send-otp          - Resend OTP verification code');
   console.log('  GET    /api/auth/profile/:userId   - Get user profile');
   console.log('\n📦 Procurement (Managers Only):');
   console.log('  POST   /api/procurement            - Record procurement');

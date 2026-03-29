@@ -34,9 +34,13 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { verifyToken } = require('../middleware/auth');
+const { sendOTPEmail, sendVerificationSuccessEmail } = require('../utils/email');
 
 // Use the same default secret as middleware/auth.js to avoid token verification mismatches
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_REGEX = /^[0-9]{10,15}$/;
 
 // Attempt to load multer for handling file uploads. If it's not installed,
 // fall back to not saving files and continue handling JSON registrations.
@@ -66,12 +70,18 @@ if (uploadMiddleware) {
     try {
       console.log('Register request received (with possible file):', { email: req.body.email, role: req.body.role });
 
-      const { name, email, password, confirmPassword, role, branch, contact } = req.body;
+      let { name, email, password, confirmPassword, role, branch, contact, phone } = req.body;
+      contact = contact || phone;
 
       // Validate required fields
       if (!name || !email || !password || !confirmPassword || !role || !branch || !contact) {
         console.log('Missing required fields');
         return res.status(400).json({ error: 'All fields are required' });
+      }
+
+      email = String(email).trim().toLowerCase();
+      if (!EMAIL_REGEX.test(email)) {
+        return res.status(400).json({ error: 'Invalid email address' });
       }
 
       // Validate role
@@ -86,7 +96,8 @@ if (uploadMiddleware) {
       }
 
       // Validate contact
-      if (!/^[0-9]{10,15}$/.test(contact)) {
+      contact = String(contact).trim();
+      if (!PHONE_REGEX.test(contact)) {
         return res.status(400).json({ error: 'Contact must be a valid phone number (10-15 digits)' });
       }
 
@@ -105,6 +116,7 @@ if (uploadMiddleware) {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
       // Build user object
       const userData = {
@@ -113,7 +125,9 @@ if (uploadMiddleware) {
         password: hashedPassword,
         role,
         branch,
-        contact
+        contact,
+        isVerified: false,
+        verificationCode
       };
 
       if (req.file) {
@@ -133,13 +147,19 @@ if (uploadMiddleware) {
         { expiresIn: '7d' }
       );
 
+      // Send OTP email asynchronously (don't block response)
+      sendOTPEmail(user.email, user.name, verificationCode).catch(err => 
+        console.error('Failed to send OTP email:', err.message)
+      );
+
       res.status(201).json({
         message: 'User registered successfully',
         token,
         role: user.role,
         userId: user._id,
         name: user.name,
-        photo: user.photo
+        photo: user.photo,
+        verificationCode
       });
     } catch (error) {
       console.error('Register error:', error);
@@ -151,12 +171,18 @@ if (uploadMiddleware) {
     try {
       console.log('Register request received:', { email: req.body.email, role: req.body.role });
       
-      const { name, email, password, confirmPassword, role, branch, contact } = req.body;
+      let { name, email, password, confirmPassword, role, branch, contact, phone } = req.body;
+      contact = contact || phone;
 
       // Validate required fields
       if (!name || !email || !password || !confirmPassword || !role || !branch || !contact) {
         console.log('Missing required fields');
         return res.status(400).json({ error: 'All fields are required' });
+      }
+
+      email = String(email).trim().toLowerCase();
+      if (!EMAIL_REGEX.test(email)) {
+        return res.status(400).json({ error: 'Invalid email address' });
       }
 
       // Validate role
@@ -171,7 +197,8 @@ if (uploadMiddleware) {
       }
 
       // Validate contact
-      if (!/^[0-9]{10,15}$/.test(contact)) {
+      contact = String(contact).trim();
+      if (!PHONE_REGEX.test(contact)) {
         return res.status(400).json({ error: 'Contact must be a valid phone number (10-15 digits)' });
       }
 
@@ -190,15 +217,18 @@ if (uploadMiddleware) {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
       // Create new user (no photo)
       const user = new User({ 
-        name, 
-        email, 
-        password: hashedPassword, 
+        name,
+        email,
+        password: hashedPassword,
         role,
         branch,
-        contact
+        contact,
+        isVerified: false,
+        verificationCode
       });
       
       await user.save();
@@ -211,12 +241,18 @@ if (uploadMiddleware) {
         { expiresIn: '7d' }
       );
 
+      // Send OTP email asynchronously (don't block response)
+      sendOTPEmail(user.email, user.name, verificationCode).catch(err => 
+        console.error('Failed to send OTP email:', err.message)
+      );
+
       res.status(201).json({ 
         message: 'User registered successfully',
         token,
         role: user.role,
         userId: user._id,
-        name: user.name
+        name: user.name,
+        verificationCode
       });
     } catch (error) {
       console.error('Register error:', error);
@@ -239,6 +275,11 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Verify account is verified
+    if (!user.isVerified) {
+      return res.status(403).json({ error: 'Please verify your account before login.' });
     }
 
     // Verify password
@@ -266,6 +307,89 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Verify user account with code from email/sms
+router.post('/verify', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and code are required' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(200).json({ message: 'Account already verified' });
+    }
+
+    if (user.verificationCode !== String(code).trim()) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    user.isVerified = true;
+    user.verificationCode = null;
+    await user.save();
+
+    // Send verification success email
+    await sendVerificationSuccessEmail(user.email, user.name);
+
+    return res.json({ message: 'Account verified successfully' });
+  } catch (error) {
+    console.error('Verification error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Send/Resend OTP to email
+router.post('/send-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(200).json({ message: 'Account is already verified' });
+    }
+
+    // Generate new OTP code
+    const newOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    user.verificationCode = newOTP;
+    await user.save();
+
+    // Send OTP email
+    const emailSent = await sendOTPEmail(user.email, user.name, newOTP);
+
+    if (emailSent) {
+      return res.json({ 
+        message: 'OTP sent successfully to your email',
+        email: user.email,
+        verificationCode: newOTP // For testing only; remove before production
+      });
+    } else {
+      return res.status(500).json({ 
+        error: 'Failed to send OTP email. Please check email configuration.' 
+      });
+    }
+  } catch (error) {
+    console.error('Send OTP error:', error);
     res.status(500).json({ error: error.message });
   }
 });
