@@ -13,8 +13,8 @@ All recommended security, validation, and testing improvements have been success
 - **Email Configuration (Gmail SMTP)**:
   - Host: smtp.gmail.com
   - Port: 587
-  - User: simonlodongotaban@gmail.com
-  - App Password: ebkd vsop vfgq dcxa
+  - User: *(set in .env)*
+  - App Password: *(set in .env)*
   - From Name: KGL Agricultural Management
 - **OTP Settings**: 10-minute expiration
 - **Port**: 3000

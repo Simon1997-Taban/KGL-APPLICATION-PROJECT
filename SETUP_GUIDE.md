@@ -24,9 +24,9 @@ The application uses **Gmail SMTP** to send OTP verification codes. The configur
 ```env
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=simonlodongotaban@gmail.com
-SMTP_PASSWORD=ebkd vsop vfgq dcxa
-EMAIL_FROM=simonlodongotaban@gmail.com
+SMTP_USER=your_gmail_address@gmail.com
+SMTP_PASSWORD=your_gmail_app_password
+EMAIL_FROM=your_gmail_address@gmail.com
 EMAIL_FROM_NAME=KGL Agricultural Management
 ```
 
@@ -306,8 +306,8 @@ curl -X POST http://localhost:3000/api/auth/login \
    # Verify these variables are set
    SMTP_HOST=smtp.gmail.com
    SMTP_PORT=587
-   SMTP_USER=simonlodongotaban@gmail.com
-   SMTP_PASSWORD=ebkd vsop vfgq dcxa
+   SMTP_USER=your_gmail_address@gmail.com
+   SMTP_PASSWORD=your_gmail_app_password
    ```
 
 2. **Check server logs**: Look for "OTP email sent successfully" message
