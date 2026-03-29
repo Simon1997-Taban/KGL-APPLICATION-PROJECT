@@ -629,6 +629,8 @@
                     
                     <button id="resendBtn" style="width: 100%; padding: 12px; background: #95a5a6; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 10px;">Resend Code</button>
                     
+                    <button id="cancelVerifyBtn" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 10px;">Cancel & Go Back</button>
+                    
                     <p style="color: #7f8c8d; font-size: 12px; margin-top: 15px;">Didn't receive the code? Check your spam folder or click "Resend Code".</p>
                 </div>
             </div>
@@ -647,6 +649,7 @@
         const otpInput = document.getElementById('otpInput');
         const verifyBtn = document.getElementById('verifyBtn');
         const resendBtn = document.getElementById('resendBtn');
+        const cancelVerifyBtn = document.getElementById('cancelVerifyBtn');
         const verifyError = document.getElementById('verifyError');
         let profileImageBase64 = '';
         let registrationEmail = '';
@@ -783,6 +786,19 @@
                     verifyError.style.display = 'none';
                 }, 5000);
             }
+        });
+
+        // Cancel verification and go back to registration form
+        cancelVerifyBtn.addEventListener('click', function() {
+            verificationModal.style.display = 'none';
+            registerForm.style.display = 'block';
+            registerForm.reset();
+            profileImageBase64 = '';
+            document.getElementById('photoPreview').src = '';
+            otpInput.value = '';
+            verifyError.textContent = '';
+            verifyError.style.display = 'none';
+            hideMessages();
         });
 
         registerForm.addEventListener('submit', async function (e) {
