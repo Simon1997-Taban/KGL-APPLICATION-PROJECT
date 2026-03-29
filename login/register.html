@@ -621,7 +621,9 @@
 
             <!-- Verification Modal -->
             <div id="verificationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-                <div style="background: white; padding: 40px; border-radius: 10px; text-align: center; max-width: 400px; box-shadow: 0 5px 25px rgba(0,0,0,0.3);">
+                <div style="background: white; padding: 40px; border-radius: 10px; text-align: center; max-width: 400px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); position: relative;">
+                    <button id="cancelVerifyBtn" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 28px; color: #7f8c8d; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">×</button>
+                    
                     <h2 style="color: #2c3e50; margin-bottom: 10px;">Verify Your Email</h2>
                     <p style="color: #7f8c8d; margin-bottom: 20px;">We've sent a verification code to your email. Enter it below to verify your account.</p>
                     
@@ -632,8 +634,6 @@
                     <button id="verifyBtn" style="width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px;">Verify Code</button>
                     
                     <button id="resendBtn" style="width: 100%; padding: 12px; background: #95a5a6; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 10px;">Resend Code</button>
-                    
-                    <button id="cancelVerifyBtn" style="width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 10px;">Cancel & Go Back</button>
                     
                     <p style="color: #7f8c8d; font-size: 12px; margin-top: 15px;">Didn't receive the code? Check your spam folder or click "Resend Code".</p>
                 </div>
@@ -891,10 +891,19 @@
             }
         });
 
-        if (localStorage.getItem('token')) {
+        // On page load: redirect verified users to dashboard, show register form for new users
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
             const role = localStorage.getItem('role');
-            if (role) window.location.href = `/dashboard?role=${encodeURIComponent(role)}`;
-        }
+            
+            // If user has token, they're already logged in - redirect to dashboard
+            if (token && role) {
+                window.location.href = `/dashboard?role=${encodeURIComponent(role)}`;
+            }
+            // Otherwise ensure registration form is visible
+            registerForm.style.display = 'block';
+            verificationModal.style.display = 'none';
+        });
     </script>
 </body>
 </html>

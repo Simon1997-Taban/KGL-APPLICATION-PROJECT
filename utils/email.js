@@ -25,8 +25,15 @@ const transporter = nodemailer.createTransport({
  */
 async function sendOTPEmail(userEmail, userName, otpCode) {
   try {
+    console.log('📧 Attempting to send OTP email...');
+    console.log('  To:', userEmail);
+    console.log('  SMTP_HOST:', process.env.SMTP_HOST);
+    console.log('  SMTP_PORT:', process.env.SMTP_PORT);
+    console.log('  SMTP_USER configured:', !!process.env.SMTP_USER);
+    console.log('  SMTP_PASSWORD configured:', !!process.env.SMTP_PASSWORD);
+    
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-      console.warn('Email config incomplete; OTP email not sent. Set SMTP_USER and SMTP_PASSWORD in .env');
+      console.error('❌ Email config incomplete; OTP email not sent. Set SMTP_USER and SMTP_PASSWORD in .env');
       return false;
     }
 
