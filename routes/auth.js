@@ -109,14 +109,45 @@ if (uploadMiddleware) {
 
       // Check if user exists
       const userExists = await User.findOne({ email });
-      if (userExists) {
-        console.log('User already exists:', email);
-        return res.status(400).json({ error: 'Email already registered' });
+      if (userExists && userExists.isVerified) {
+        console.log('Verified user already exists:', email);
+        return res.status(400).json({ error: 'Email already registered. Please log in.' });
       }
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // If unverified user exists, update their account
+      if (userExists && !userExists.isVerified) {
+        console.log('Unverified user found, updating registration:', email);
+        userExists.name = name;
+        userExists.password = hashedPassword;
+        userExists.role = role;
+        userExists.branch = branch;
+        userExists.contact = contact;
+        userExists.verificationCode = verificationCode;
+        
+        if (req.file) {
+          userExists.photo = '/uploads/' + req.file.filename;
+        }
+        
+        await userExists.save();
+        console.log('Unverified user re-registered:', email);
+        
+        // Send new OTP email
+        console.log(`Attempting to send new OTP code ${verificationCode} to ${email}`);
+        sendOTPEmail(userExists.email, userExists.name, verificationCode).catch(err => 
+          console.error('Failed to send OTP email:', err.message)
+        );
+        
+        return res.status(201).json({
+          message: 'Registration updated. A new verification code has been sent to your email.',
+          userId: userExists._id,
+          email: userExists.email,
+          requiresVerification: true
+        });
+      }
 
       // Build user object
       const userData = {
@@ -202,14 +233,41 @@ if (uploadMiddleware) {
 
       // Check if user exists
       const userExists = await User.findOne({ email });
-      if (userExists) {
-        console.log('User already exists:', email);
-        return res.status(400).json({ error: 'Email already registered' });
+      if (userExists && userExists.isVerified) {
+        console.log('Verified user already exists:', email);
+        return res.status(400).json({ error: 'Email already registered. Please log in.' });
       }
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // If unverified user exists, update their account
+      if (userExists && !userExists.isVerified) {
+        console.log('Unverified user found, updating registration:', email);
+        userExists.name = name;
+        userExists.password = hashedPassword;
+        userExists.role = role;
+        userExists.branch = branch;
+        userExists.contact = contact;
+        userExists.verificationCode = verificationCode;
+        
+        await userExists.save();
+        console.log('Unverified user re-registered:', email);
+        
+        // Send new OTP email
+        console.log(`Attempting to send new OTP code ${verificationCode} to ${email}`);
+        sendOTPEmail(userExists.email, userExists.name, verificationCode).catch(err => 
+          console.error('Failed to send OTP email:', err.message)
+        );
+        
+        return res.status(201).json({
+          message: 'Registration updated. A new verification code has been sent to your email.',
+          userId: userExists._id,
+          email: userExists.email,
+          requiresVerification: true
+        });
+      }
 
       // Create new user (no photo)
       const user = new User({ 
