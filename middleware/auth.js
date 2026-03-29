@@ -48,6 +48,15 @@ const verifyToken = (req, res, next) => {
   try {
     // Verify token signature against JWT_SECRET and decode
     const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Check if user's email is verified
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    if (!user.isVerified) {
+      return res.status(403).json({ error: 'Email not verified. Please verify your email before accessing this resource.' });
+    }
     
     // Attach decoded user info to request object
     // Contains: userId, email, role

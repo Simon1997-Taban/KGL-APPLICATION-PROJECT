@@ -140,26 +140,18 @@ if (uploadMiddleware) {
       await user.save();
       console.log('User registered successfully:', email);
 
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: user._id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
       // Send OTP email asynchronously (don't block response)
+      console.log(`Attempting to send OTP code ${verificationCode} to ${email}`);
       sendOTPEmail(user.email, user.name, verificationCode).catch(err => 
         console.error('Failed to send OTP email:', err.message)
       );
 
+      // ⚠️ DO NOT ISSUE TOKEN HERE - User must verify email first
       res.status(201).json({
-        message: 'User registered successfully',
-        token,
-        role: user.role,
+        message: 'User registered successfully. A verification code has been sent to your email.',
         userId: user._id,
-        name: user.name,
-        photo: user.photo,
-        verificationCode
+        email: user.email,
+        requiresVerification: true
       });
     } catch (error) {
       console.error('Register error:', error);
@@ -234,25 +226,18 @@ if (uploadMiddleware) {
       await user.save();
       console.log('User registered successfully:', email);
 
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: user._id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
       // Send OTP email asynchronously (don't block response)
+      console.log(`Attempting to send OTP code ${verificationCode} to ${email}`);
       sendOTPEmail(user.email, user.name, verificationCode).catch(err => 
         console.error('Failed to send OTP email:', err.message)
       );
 
+      // ⚠️ DO NOT ISSUE TOKEN HERE - User must verify email first
       res.status(201).json({ 
-        message: 'User registered successfully',
-        token,
-        role: user.role,
+        message: 'User registered successfully. A verification code has been sent to your email.',
         userId: user._id,
-        name: user.name,
-        verificationCode
+        email: user.email,
+        requiresVerification: true
       });
     } catch (error) {
       console.error('Register error:', error);
