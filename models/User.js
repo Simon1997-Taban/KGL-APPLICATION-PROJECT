@@ -79,6 +79,18 @@ const userSchema = new mongoose.Schema({
     default: false
   },
 
+  // OTP verification fields (hashed for security)
+  otp: {
+    type: String,
+    default: null
+  },
+
+  otpExpires: {
+    type: Date,
+    default: null
+  },
+
+  // Legacy field - can be removed after migration
   verificationCode: {
     type: String,
     default: null

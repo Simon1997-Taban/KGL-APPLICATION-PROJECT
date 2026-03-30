@@ -117,6 +117,8 @@ if (uploadMiddleware) {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpHash = await bcrypt.hash(verificationCode, 10);
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
       // If unverified user exists, update their account
       if (userExists && !userExists.isVerified) {
@@ -126,7 +128,8 @@ if (uploadMiddleware) {
         userExists.role = role;
         userExists.branch = branch;
         userExists.contact = contact;
-        userExists.verificationCode = verificationCode;
+        userExists.otp = otpHash;
+        userExists.otpExpires = otpExpires;
         
         if (req.file) {
           userExists.photo = '/uploads/' + req.file.filename;
@@ -158,7 +161,8 @@ if (uploadMiddleware) {
         branch,
         contact,
         isVerified: false,
-        verificationCode
+        otp: otpHash,
+        otpExpires
       };
 
       if (req.file) {
@@ -355,15 +359,14 @@ router.post('/login', async (req, res) => {
 });
 
 // Verify user account with code from email/sms
-router.post('/verify', async (req, res) => {
+router.post('/verify-otp', async (req, res) => {
   try {
-    const { email, code } = req.body;
-    if (!email || !code) {
-      return res.status(400).json({ error: 'Email and code are required' });
+    const { userId, otp } = req.body;
+    if (!userId || !otp) {
+      return res.status(400).json({ error: 'userId and otp are required' });
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -372,18 +375,42 @@ router.post('/verify', async (req, res) => {
       return res.status(200).json({ message: 'Account already verified' });
     }
 
-    if (user.verificationCode !== String(code).trim()) {
+    if (!user.otp || user.otpExpires < new Date()) {
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+
+    const valid = await bcrypt.compare(otp.trim(), user.otp);
+    if (!valid) {
       return res.status(400).json({ error: 'Invalid verification code' });
     }
 
     user.isVerified = true;
-    user.verificationCode = null;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    user.verificationCode = undefined; // Clear legacy field
     await user.save();
 
     // Send verification success email
     await sendVerificationSuccessEmail(user.email, user.name);
 
-    return res.json({ message: 'Account verified successfully' });
+    // Issue token after verification
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return res.json({
+      message: 'Account verified successfully!',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        branch: user.branch
+      }
+    });
   } catch (error) {
     console.error('Verification error:', error);
     res.status(500).json({ error: error.message });
@@ -391,19 +418,14 @@ router.post('/verify', async (req, res) => {
 });
 
 // Send/Resend OTP to email
-router.post('/send-otp', async (req, res) => {
+router.post('/resend-otp', async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
-    if (!EMAIL_REGEX.test(normalizedEmail)) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
-
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -414,7 +436,8 @@ router.post('/send-otp', async (req, res) => {
 
     // Generate new OTP code
     const newOTP = Math.floor(100000 + Math.random() * 900000).toString();
-    user.verificationCode = newOTP;
+    user.otp = await bcrypt.hash(newOTP, 10);
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
     // Send OTP email
@@ -423,8 +446,7 @@ router.post('/send-otp', async (req, res) => {
     if (emailSent) {
       return res.json({ 
         message: 'OTP sent successfully to your email',
-        email: user.email,
-        verificationCode: newOTP // For testing only; remove before production
+        userId: user._id
       });
     } else {
       return res.status(500).json({ 

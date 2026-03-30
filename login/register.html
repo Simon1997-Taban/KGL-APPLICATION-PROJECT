@@ -494,6 +494,21 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* OTP screen */
+        .otp-screen { display:none; text-align:center; padding:20px 0; }
+        .otp-icon { font-size:48px; margin-bottom:16px; }
+        .otp-screen h3 { font-size:20px; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:10px; }
+        .otp-screen p  { color:var(--muted); font-size:14px; line-height:1.6; margin-bottom:24px; }
+        .otp-screen p strong { color:var(--cyan); }
+        .otp-input {
+            width:100%; text-align:center; font-size:28px; font-weight:700; letter-spacing:14px;
+            padding:18px; border-radius:18px; border:1px solid rgba(65,228,222,0.35);
+            background:rgba(7,11,19,0.6); color:var(--text); margin-bottom:16px;
+        }
+        .otp-input:focus { outline:none; border-color:rgba(65,228,222,0.72); box-shadow:0 0 0 4px rgba(65,228,222,0.14); }
+        .resend-link { background:none; border:0; color:var(--pink); font-size:13px; cursor:pointer; text-decoration:underline; margin-top:12px; }
+        .resend-link:disabled { color:var(--muted); cursor:default; text-decoration:none; }
     </style>
 </head>
 <body>
@@ -619,24 +634,19 @@
                 </div>
             </div>
 
-            <!-- Verification Modal -->
-            <div id="verificationModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-                <div style="background: white; padding: 40px; border-radius: 10px; text-align: center; max-width: 400px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); position: relative;">
-                    <button id="cancelVerifyBtn" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 28px; color: #7f8c8d; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">×</button>
-                    
-                    <h2 style="color: #2c3e50; margin-bottom: 10px;">Verify Your Email</h2>
-                    <p style="color: #7f8c8d; margin-bottom: 20px;">We've sent a verification code to your email. Enter it below to verify your account.</p>
-                    
-                    <input type="text" id="otpInput" placeholder="Enter 6-digit code" maxlength="6" style="width: 100%; padding: 12px; font-size: 24px; text-align: center; letter-spacing: 10px; border: 2px solid #ecf0f1; border-radius: 5px; margin-bottom: 20px;" required>
-                    
-                    <div id="verifyError" style="color: #e74c3c; display: none; margin-bottom: 15px; font-size: 14px;"></div>
-                    
-                    <button id="verifyBtn" style="width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px;">Verify Code</button>
-                    
-                    <button id="resendBtn" style="width: 100%; padding: 12px; background: #95a5a6; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 10px;">Resend Code</button>
-                    
-                    <p style="color: #7f8c8d; font-size: 12px; margin-top: 15px;">Didn't receive the code? Check your spam folder or click "Resend Code".</p>
-                </div>
+            <!-- OTP VERIFICATION SCREEN -->
+            <div id="otpScreen" class="otp-screen" style="display: none;">
+                <div class="otp-icon">📧</div>
+                <h3>Verify Your Account</h3>
+                <p id="otpDesc">We sent a 6-digit code to <strong id="otpEmailHint"></strong>.<br>Enter it below to activate your account.</p>
+
+                <div id="otpError" class="msg error" style="display: none;"></div>
+                <form id="otpForm">
+                    <input type="text" class="otp-input" id="otpInput" maxlength="6" placeholder="000000" autocomplete="one-time-code" inputmode="numeric" required>
+                    <button type="submit" class="submit-button" id="otpBtn" style="width: 100%;">Verify &amp; Activate</button>
+                </form>
+                <br>
+                <button type="button" class="resend-link" id="resendOtp">Resend code</button>
             </div>
         </section>
     </main>
@@ -644,20 +654,20 @@
     <script>
         const API_BASE = window.location.origin;
         const registerForm = document.getElementById('registerForm');
-        const verificationModal = document.getElementById('verificationModal');
+        const otpScreen = document.getElementById('otpScreen');
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
         const registerBtn = document.getElementById('registerBtn');
         const btnText = document.getElementById('btnText');
         const btnLoading = document.getElementById('btnLoading');
         const otpInput = document.getElementById('otpInput');
-        const verifyBtn = document.getElementById('verifyBtn');
-        const resendBtn = document.getElementById('resendBtn');
-        const cancelVerifyBtn = document.getElementById('cancelVerifyBtn');
-        const verifyError = document.getElementById('verifyError');
+        const otpBtn = document.getElementById('otpBtn');
+        const resendOtp = document.getElementById('resendOtp');
+        const otpError = document.getElementById('otpError');
+        const otpEmailHint = document.getElementById('otpEmailHint');
         let profileImageBase64 = '';
-        let registrationEmail = '';
-        let registrationPassword = '';
+        let pendingUserId = null;
+        let pendingEmail = '';
 
         document.getElementById('profilePhoto').addEventListener('change', function () {
             const file = this.files[0];
@@ -687,6 +697,13 @@
             successMessage.style.display = 'none';
         }
 
+        function showOtpScreen() {
+            otpEmailHint.textContent = pendingEmail;
+            registerForm.style.display = 'none';
+            otpScreen.style.display = 'block';
+            document.querySelector('.brand-copy p').textContent = 'Check your email for the verification code.';
+        }
+
         function setLoading(loading) {
             registerBtn.disabled = loading;
             btnText.style.display = loading ? 'none' : 'inline';
@@ -712,97 +729,83 @@
             this.value = this.value.replace(/[^0-9]/g, '');
         });
 
-        // Verify button click
-        verifyBtn.addEventListener('click', async function() {
-            const code = otpInput.value.trim();
-            if (!code || code.length !== 6) {
-                verifyError.textContent = 'Please enter a valid 6-digit code.';
-                verifyError.style.display = 'block';
+        // OTP form submit
+        document.getElementById('otpForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const otp = otpInput.value.trim();
+            if (!otp || otp.length !== 6) {
+                otpError.textContent = 'Please enter a valid 6-digit code.';
+                otpError.style.display = 'block';
                 return;
             }
 
-            verifyBtn.disabled = true;
-            verifyError.style.display = 'none';
+            otpBtn.disabled = true;
+            otpError.style.display = 'none';
 
             try {
-                const response = await fetch(`${API_BASE}/api/auth/verify`, {
+                const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: registrationEmail, code: code })
+                    body: JSON.stringify({ userId: pendingUserId, otp: otp })
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    verificationModal.style.display = 'none';
-                    showSuccess('✓ Account verified! You can now log in. Redirecting to login...');
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
+                    localStorage.setItem('token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    window.location.href = result.user.role === 'director' ? '/dashboard?role=director' : '/dashboard?role=' + result.user.role;
                 } else {
-                    verifyError.textContent = result.error || 'Verification failed. Please try again.';
-                    verifyError.style.display = 'block';
+                    otpError.textContent = result.error || 'Verification failed. Please try again.';
+                    otpError.style.display = 'block';
                 }
             } catch (error) {
-                verifyError.textContent = 'Network error. Please try again.';
-                verifyError.style.display = 'block';
+                otpError.textContent = 'Network error. Please try again.';
+                otpError.style.display = 'block';
                 console.error('Verification error:', error);
             } finally {
-                verifyBtn.disabled = false;
+                otpBtn.disabled = false;
             }
         });
 
         // Resend OTP button
-        resendBtn.addEventListener('click', async function() {
-            resendBtn.disabled = true;
-            resendBtn.textContent = 'Sending...';
-            verifyError.style.display = 'none';
+        resendOtp.addEventListener('click', async function() {
+            resendOtp.disabled = true;
+            resendOtp.textContent = 'Sending...';
+            otpError.style.display = 'none';
 
             try {
-                const response = await fetch(`${API_BASE}/api/auth/send-otp`, {
+                const response = await fetch(`${API_BASE}/api/auth/resend-otp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: registrationEmail })
+                    body: JSON.stringify({ userId: pendingUserId })
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    verifyError.textContent = 'New code sent to your email!';
-                    verifyError.style.display = 'block';
-                    verifyError.style.color = '#27ae60';
+                    otpError.textContent = 'A new verification code has been sent to your email.';
+                    otpError.style.display = 'block';
+                    otpError.style.color = 'var(--success)';
                     otpInput.value = '';
                     otpInput.focus();
                 } else {
-                    verifyError.textContent = result.error || 'Failed to resend code.';
-                    verifyError.style.display = 'block';
-                    verifyError.style.color = '#e74c3c';
+                    otpError.textContent = result.error || 'Failed to resend code.';
+                    otpError.style.display = 'block';
+                    otpError.style.color = 'var(--danger)';
                 }
             } catch (error) {
-                verifyError.textContent = 'Network error. Please try again.';
-                verifyError.style.display = 'block';
-                verifyError.style.color = '#e74c3c';
+                otpError.textContent = 'Network error. Please try again.';
+                otpError.style.display = 'block';
+                otpError.style.color = 'var(--danger)';
                 console.error('Resend OTP error:', error);
             } finally {
-                resendBtn.disabled = false;
-                resendBtn.textContent = 'Resend Code';
+                resendOtp.disabled = false;
+                resendOtp.textContent = 'Resend code';
                 setTimeout(() => {
-                    verifyError.style.display = 'none';
+                    otpError.style.display = 'none';
                 }, 5000);
             }
-        });
-
-        // Cancel verification and go back to registration form
-        cancelVerifyBtn.addEventListener('click', function() {
-            verificationModal.style.display = 'none';
-            registerForm.style.display = 'block';
-            registerForm.reset();
-            profileImageBase64 = '';
-            document.getElementById('photoPreview').src = '';
-            otpInput.value = '';
-            verifyError.textContent = '';
-            verifyError.style.display = 'none';
-            hideMessages();
         });
 
         registerForm.addEventListener('submit', async function (e) {
@@ -872,13 +875,9 @@
 
                 if (response.ok) {
                     // Store registration data temporarily for verification
-                    registrationEmail = formData.email;
-                    registrationPassword = formData.password;
-
-                    // Show verification modal instead of immediate redirect
-                    showSuccess('Account created! Please verify your email to continue.');
-                    registerForm.style.display = 'none';
-                    verificationModal.style.display = 'flex';
+                    pendingUserId = result.userId;
+                    pendingEmail = result.email;
+                    showOtpScreen();
                     otpInput.focus();
                 } else {
                     showError(result.message || result.error || 'Registration failed');
@@ -894,15 +893,15 @@
         // On page load: redirect verified users to dashboard, show register form for new users
         document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('token');
-            const role = localStorage.getItem('role');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
             
             // If user has token, they're already logged in - redirect to dashboard
-            if (token && role) {
-                window.location.href = `/dashboard?role=${encodeURIComponent(role)}`;
+            if (token && user.role) {
+                window.location.href = `/dashboard?role=${encodeURIComponent(user.role)}`;
             }
             // Otherwise ensure registration form is visible
             registerForm.style.display = 'block';
-            verificationModal.style.display = 'none';
+            otpScreen.style.display = 'none';
         });
     </script>
 </body>
