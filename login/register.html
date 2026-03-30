@@ -496,7 +496,25 @@
         }
 
         /* OTP screen */
-        .otp-screen { display:none; text-align:center; padding:20px 0; }
+        .otp-screen {
+            display: none;
+            text-align: center;
+            padding: 20px 16px;
+            max-height: calc(80vh - 90px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        .otp-screen::-webkit-scrollbar {
+            width: 8px;
+        }
+        .otp-screen::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.08);
+            border-radius: 999px;
+        }
+        .otp-screen::-webkit-scrollbar-thumb {
+            background: rgba(65,228,222,0.45);
+            border-radius: 999px;
+        }
         .otp-icon { font-size:48px; margin-bottom:16px; }
         .otp-screen h3 { font-size:20px; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:10px; }
         .otp-screen p  { color:var(--muted); font-size:14px; line-height:1.6; margin-bottom:24px; }
