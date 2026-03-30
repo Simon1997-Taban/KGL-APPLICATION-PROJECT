@@ -115,9 +115,9 @@ if (uploadMiddleware) {
       }
 
       // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 8);
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-      const otpHash = await bcrypt.hash(verificationCode, 10);
+      const otpHash = await bcrypt.hash(verificationCode, 8);
       const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
       // If unverified user exists, update their account
@@ -138,11 +138,13 @@ if (uploadMiddleware) {
         await userExists.save();
         console.log('Unverified user re-registered:', email);
         
-        // Send new OTP email
+        // Send new OTP email asynchronously
         console.log(`Attempting to send new OTP code ${verificationCode} to ${email}`);
-        sendOTPEmail(userExists.email, userExists.name, verificationCode).catch(err => 
-          console.error('Failed to send OTP email:', err.message)
-        );
+        setImmediate(() => {
+          sendOTPEmail(userExists.email, userExists.name, verificationCode).catch(err => 
+            console.error('Failed to send OTP email:', err.message)
+          );
+        });
         
         return res.status(201).json({
           message: 'Registration updated. A new verification code has been sent to your email.',
@@ -177,9 +179,11 @@ if (uploadMiddleware) {
 
       // Send OTP email asynchronously (don't block response)
       console.log(`Attempting to send OTP code ${verificationCode} to ${email}`);
-      sendOTPEmail(user.email, user.name, verificationCode).catch(err => 
-        console.error('Failed to send OTP email:', err.message)
-      );
+      setImmediate(() => {
+        sendOTPEmail(user.email, user.name, verificationCode).catch(err => 
+          console.error('Failed to send OTP email:', err.message)
+        );
+      });
 
       // ⚠️ DO NOT ISSUE TOKEN HERE - User must verify email first
       res.status(201).json({
