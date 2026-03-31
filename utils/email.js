@@ -1,36 +1,10 @@
 /**
  * Email Service
- * Handles sending OTP codes and verification emails via Gmail SMTP
+ * Handles sending OTP codes and verification emails via Resend
  */
 
-const nodemailer = require('nodemailer');
-
-// Configure transporter for Gmail
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // Use TLS (true for 465, false for other ports)
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD
-  }
-});
-
-// Test email connection on startup
-if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error('❌ SMTP Connection Failed on startup:');
-      console.error('   Error:', error.message);
-      console.error('   This means emails will NOT be deliverable');
-      console.error('   Check: SMTP_USER, SMTP_PASSWORD, SMTP_HOST, SMTP_PORT in .env');
-    } else {
-      console.log('✅ SMTP Connection Successful - Ready to send emails');
-    }
-  });
-} else {
-  console.warn('⚠️  SMTP credentials not configured. Email delivery disabled.');
-}
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Send OTP verification email
@@ -41,68 +15,35 @@ if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
  */
 async function sendOTPEmail(userEmail, userName, otpCode) {
   try {
-    console.log('📧 Attempting to send OTP email...');
-    console.log('  To:', userEmail);
-    console.log('  SMTP_HOST:', process.env.SMTP_HOST);
-    console.log('  SMTP_PORT:', process.env.SMTP_PORT);
-    console.log('  SMTP_USER configured:', !!process.env.SMTP_USER);
-    console.log('  SMTP_PASSWORD configured:', !!process.env.SMTP_PASSWORD);
-    
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-      console.error('❌ Email config incomplete; OTP email not sent. Set SMTP_USER and SMTP_PASSWORD in .env');
+    if (!process.env.RESEND_API_KEY) {
+      console.error('❌ RESEND_API_KEY not set');
       return false;
     }
-
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'KGL'}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+    const { error } = await resend.emails.send({
+      from: 'KGL <onboarding@resend.dev>',
       to: userEmail,
       subject: 'Verify Your KGL Account - OTP Code',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; border-radius: 10px;">
-          <div style="background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #2c3e50; margin-bottom: 20px;">Welcome to KGL!</h2>
-            
-            <p style="font-size: 16px; color: #555; line-height: 1.6;">
-              Hi ${userName},
-            </p>
-            
-            <p style="font-size: 16px; color: #555; line-height: 1.6;">
-              Thank you for registering with KGL Agricultural Management System. To complete your registration and verify your email, please use the following One-Time Password (OTP):
-            </p>
-            
-            <div style="background-color: #ecf0f1; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0; border-left: 4px solid #27ae60;">
-              <p style="font-size: 14px; color: #7f8c8d; margin: 0 0 10px 0;">Your OTP Code</p>
-              <p style="font-size: 36px; font-weight: bold; color: #27ae60; margin: 0; letter-spacing: 3px;">${otpCode}</p>
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f5f5f5;border-radius:10px">
+          <div style="background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1)">
+            <h2 style="color:#2c3e50">Welcome to KGL!</h2>
+            <p style="color:#555">Hi ${userName},</p>
+            <p style="color:#555">Use the OTP below to verify your account. It expires in 10 minutes.</p>
+            <div style="background:#ecf0f1;padding:20px;border-radius:8px;text-align:center;margin:30px 0;border-left:4px solid #27ae60">
+              <p style="font-size:14px;color:#7f8c8d;margin:0 0 10px">Your OTP Code</p>
+              <p style="font-size:36px;font-weight:bold;color:#27ae60;margin:0;letter-spacing:3px">${otpCode}</p>
             </div>
-            
-            <p style="font-size: 14px; color: #e74c3c; margin: 20px 0;">
-              <strong>⚠️ Security Notice:</strong> This code will expire in 10 minutes. Do not share this code with anyone.
-            </p>
-            
-            <p style="font-size: 16px; color: #555; line-height: 1.6;">
-              If you did not request this verification code, please ignore this email or contact our support team immediately.
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #ecf0f1; margin: 30px 0;">
-            
-            <p style="font-size: 12px; color: #95a5a6; text-align: center;">
-              KGL Agricultural Management System | Secure Email Verification
-            </p>
+            <p style="color:#e74c3c;font-size:14px"><strong>⚠️ Do not share this code with anyone.</strong></p>
+            <hr style="border:none;border-top:1px solid #ecf0f1;margin:30px 0">
+            <p style="font-size:12px;color:#95a5a6;text-align:center">KGL Agricultural Management System</p>
           </div>
-        </div>
-      `,
-      text: `Your OTP code is: ${otpCode}\nThis code will expire in 10 minutes.\nDo not share this code with anyone.`
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ OTP email sent successfully:', info.response);
+        </div>`
+    });
+    if (error) { console.error('❌ Resend error:', error); return false; }
+    console.log('✅ OTP email sent to', userEmail);
     return true;
-  } catch (error) {
-    console.error('❌ Error sending OTP email:');
-    console.error('   Message:', error.message);
-    console.error('   Code:', error.code);
-    console.error('   Response:', error.response);
-    console.error('   Full Error:', error);
+  } catch (err) {
+    console.error('❌ sendOTPEmail failed:', err.message);
     return false;
   }
 }
@@ -115,55 +56,27 @@ async function sendOTPEmail(userEmail, userName, otpCode) {
  */
 async function sendVerificationSuccessEmail(userEmail, userName) {
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-      return false;
-    }
-
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'KGL'}" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+    if (!process.env.RESEND_API_KEY) return false;
+    const { error } = await resend.emails.send({
+      from: 'KGL <onboarding@resend.dev>',
       to: userEmail,
       subject: 'Email Verified - Welcome to KGL!',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; border-radius: 10px;">
-          <div style="background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #27ae60; margin-bottom: 20px;">✓ Email Verified Successfully!</h2>
-            
-            <p style="font-size: 16px; color: #555; line-height: 1.6;">
-              Hi ${userName},
-            </p>
-            
-            <p style="font-size: 16px; color: #555; line-height: 1.6;">
-              Your account has been successfully verified! You can now log in to the KGL Agricultural Management System using your credentials.
-            </p>
-            
-            <div style="background-color: #d5f4e6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #27ae60;">
-              <p style="color: #27ae60; margin: 0;">
-                <strong>✓ Account Status:</strong> Active and Ready to Use
-              </p>
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f5f5f5;border-radius:10px">
+          <div style="background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.1)">
+            <h2 style="color:#27ae60">✓ Email Verified Successfully!</h2>
+            <p style="color:#555">Hi ${userName},</p>
+            <p style="color:#555">Your KGL account is now active. You can log in and access all features.</p>
+            <div style="background:#d5f4e6;padding:15px;border-radius:8px;margin:20px 0;border-left:4px solid #27ae60">
+              <strong style="color:#27ae60">✓ Account Status: Active</strong>
             </div>
-            
-            <p style="font-size: 16px; color: #555; line-height: 1.6;">
-              You can now:
-            </p>
-            <ul style="font-size: 16px; color: #555; line-height: 1.8;">
-              <li>Log in to your account</li>
-              <li>Access all features and dashboards</li>
-              <li>Manage your profile and settings</li>
-            </ul>
-            
-            <p style="font-size: 14px; color: #95a5a6; margin-top: 30px;">
-              If you have any questions, contact our support team.
-            </p>
           </div>
-        </div>
-      `,
-      text: `Your email has been verified successfully! You can now log in to your KGL account.`
-    };
-
-    await transporter.sendMail(mailOptions);
+        </div>`
+    });
+    if (error) { console.error('❌ Resend error:', error); return false; }
     return true;
-  } catch (error) {
-    console.error('Error sending verification success email:', error.message);
+  } catch (err) {
+    console.error('Error sending verification success email:', err.message);
     return false;
   }
 }
